@@ -1,216 +1,215 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2487.6">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>stream_viewer</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #555;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: bottom;
+            height: 100vh;
+            padding: 5px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            background: #000;
+            margin-bottom: 0px;
+        }
+
+        iframe.video {
+            width: 100%;
+            height: 700px; /* Set default height for the video */
+            border: 0;
+        }
+
+        .editor {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .editor label {
+            font-size: 0.7rem;
+        }
+
+        .editor input {
+            padding: 8px;
+            font-size: 1rem;
+            border: none;
+            border-radius: 4px;
+            width: 38%;
+            background-color: #111;
+            color: #333;
+        }
+
+        .editor button {
+            padding: 5px 10px;
+            font-size: 0.9rem;
+            border: none;
+            border-radius: 4px;
+            background-color: #111;
+            color: #555;
+            cursor: pointer;
+        }
+
+        .editor button:hover {
+            background-color: #000;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .channel-list {
+            width: 100%;
+            max-width: 800px;
+            list-style-type: none;
+            padding: 0;
+            margin-top: 4px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 2px;
+        }
+
+        .channel-list li {
+            font-size: 0.7rem;
+            padding: 4px;
+            background-color: #111;
+            text-align: center;
+            border-radius: 4px;
+            word-wrap: break-word;
+            cursor: pointer;
+        }
+
+        .channel-list li:hover {
+            background-color: #000;
+        }
+    </style>
+    <script>
+        function updateStream() {
+            const newSrc = document.getElementById('streamLink').value;
+            const iframe = document.querySelector('iframe.video');
+            iframe.src = newSrc;
+        }
+
+        function modifyStreamNumber(delta) {
+            const streamLinkInput = document.getElementById('streamLink');
+            const currentUrl = new URL(streamLinkInput.value);
+            const streamParam = currentUrl.pathname.match(/stream-(\d+)/);
+            if (streamParam) {
+                const currentNumber = parseInt(streamParam[1], 10);
+                const newNumber = Math.max(1, currentNumber + delta);
+                currentUrl.pathname = currentUrl.pathname.replace(/stream-\d+/, `stream-${newNumber}`);
+                streamLinkInput.value = currentUrl.href;
+                updateStream();
+            }
+        }
+
+        function setStreamFromChannel(channelNumber) {
+            const streamLinkInput = document.getElementById('streamLink');
+            const baseUrl = "https://thedaddy.to/embed/stream-";
+            streamLinkInput.value = `${baseUrl}${channelNumber}.php`;
+            updateStream();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const channelItems = document.querySelectorAll('.channel-list li');
+            channelItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const channelNumber = item.textContent.match(/\d+/);
+                    if (channelNumber) {
+                        setStreamFromChannel(channelNumber[0]);
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Stream Viewer&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>body {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin: 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-family: Arial, sans-serif;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #000;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>flex-direction: column;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>height: 100vh;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.container {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>max-width: 1000px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background: #000;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>resize: both;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>overflow: auto;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>iframe.video {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>height: 600px; /* Set default height for the video */</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>resize: both; /* Allow both horizontal and vertical resizing */</p>
-<p class="p1"><span class="Apple-converted-space">            </span>overflow: auto;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.editor {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>max-width: 800px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>flex-direction: column;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>align-items: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>gap: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 20px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.editor label {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.8rem;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.editor input {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 8px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 1rem;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: none;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 4px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #111;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.editor button {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 5px 10px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.9rem;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border: none;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 4px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #111;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>color: #fff;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.editor button:hover {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #222;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.button-group {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: flex;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>gap: 10px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>justify-content: center;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.channel-list {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>width: 100%;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>max-width: 800px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>list-style-type: none;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 0;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 4px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>display: grid;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));</p>
-<p class="p1"><span class="Apple-converted-space">            </span>gap: 2px;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.channel-list li {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>font-size: 0.7rem;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>padding: 4px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #111;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>text-align: center;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 4px;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>word-wrap: break-word;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>cursor: pointer;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>.channel-list li:hover {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>background-color: #222;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>function updateStream() {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const newSrc = document.getElementById('streamLink').value;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const iframe = document.querySelector('iframe.video');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>iframe.src = newSrc;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function modifyStreamNumber(delta) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const streamLinkInput = document.getElementById('streamLink');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const currentUrl = new URL(streamLinkInput.value);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const streamParam = currentUrl.pathname.match(/stream-(\d+)/);</p>
-<p class="p1"><span class="Apple-converted-space">            </span>if (streamParam) {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const currentNumber = parseInt(streamParam[1], 10);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>const newNumber = Math.max(1, currentNumber + delta);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>currentUrl.pathname = currentUrl.pathname.replace(/stream-\d+/, `stream-${newNumber}`);</p>
-<p class="p1"><span class="Apple-converted-space">                </span>streamLinkInput.value = currentUrl.href;</p>
-<p class="p1"><span class="Apple-converted-space">                </span>updateStream();</p>
-<p class="p1"><span class="Apple-converted-space">            </span>}</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>function setStreamFromChannel(channelNumber) {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const streamLinkInput = document.getElementById('streamLink');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const baseUrl = "https://thedaddy.to/embed/stream-";</p>
-<p class="p1"><span class="Apple-converted-space">            </span>streamLinkInput.value = `${baseUrl}${channelNumber}.php`;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>updateStream();</p>
-<p class="p1"><span class="Apple-converted-space">        </span>}</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">        </span>document.addEventListener('DOMContentLoaded', () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">            </span>const channelItems = document.querySelectorAll('.channel-list li');</p>
-<p class="p1"><span class="Apple-converted-space">            </span>channelItems.forEach(item =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                </span>item.addEventListener('click', () =&gt; {</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>const channelNumber = item.textContent.match(/\d+/);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>if (channelNumber) {</p>
-<p class="p1"><span class="Apple-converted-space">                        </span>setStreamFromChannel(channelNumber[0]);</p>
-<p class="p1"><span class="Apple-converted-space">                    </span>}</p>
-<p class="p1"><span class="Apple-converted-space">                </span>});</p>
-<p class="p1"><span class="Apple-converted-space">            </span>});</p>
-<p class="p1"><span class="Apple-converted-space">        </span>});</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="container"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;iframe class="video responsive"<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>marginheight="0"<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>marginwidth="0"<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>src="https://thedaddy.to/embed/stream-347.php"<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>name="iframe_a"<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>scrolling="no"<span class="Apple-converted-space"> </span></p>
-<p class="p1"><span class="Apple-converted-space">                </span>allowfullscreen="yes"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>Your browser does not support the iframe tag.</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/iframe&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;div class="editor"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;label for="streamLink"&gt;Stream Link:&lt;/label&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;input type="text" id="streamLink" value="https://thedaddy.to/embed/stream-347.php"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;div class="button-group"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="modifyStreamNumber(-1)"&gt;Previous Stream&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">            </span>&lt;button onclick="modifyStreamNumber(1)"&gt;Next Stream&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;button onclick="updateStream()"&gt;Update Stream&lt;/button&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/div&gt;</p>
-<p class="p2"><br></p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;ul class="channel-list"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;ABC 766&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;NBC 769&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Fox5 768&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;CBS 767&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;ESPN 44&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;AMC 303&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;CNN 345&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Fox News 347&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Fox Business 297&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Animal Planet 304&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Bravo 307&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;FX 317&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;FXX 298&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;FX Movie 381&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Fight Network 757&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;HBO 321&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Cinemax 374&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Showtime 333&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Starz 335&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Headline News 323&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;IFC 656&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Nat Geo Wild 745&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Paramount 334&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Rai 850&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;MTV 371&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;Vice 659&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">        </span>&lt;li&gt;XXX 501&lt;/li&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>&lt;/ul&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+    <div class="container">
+        <!-- Embedding only the video stream -->
+        <iframe class="video" 
+                src="https://thedaddy.to/embed/stream-766.php" 
+                name="iframe_a" 
+                allowfullscreen>
+            Your browser does not support the iframe tag.
+        </iframe>
+    </div>
+
+    <div class="editor">
+        <input type="text" id="streamLink" value="https://thedaddy.to/embed/stream-766.php">
+        <div class="button-group">
+            <button onclick="modifyStreamNumber(-1)">Previous Stream</button>
+            <button onclick="updateStream()">Update Stream</button>
+            <button onclick="modifyStreamNumber(1)">Next Stream</button>
+        </div>
+
+        <ul class="channel-list">
+            <li>ABC 766</li>
+            <li>CBS 767</li>
+            <li>Fox 768</li>
+            <li>NBC 769</li>
+            <li>ESPN 44</li>
+            <li>ESPN Two 45</li>
+            <li>ESPNU 316</li>
+            <li>AMC 303</li>
+            <li>MSNBC News 327</li>
+	    <li>CNBC News 309</li>
+            <li>CNN 345</li>
+            <li>Fox News 347</li>
+            <li>Fox Business 297</li>
+            <li>Fox Weather 775</li>
+            <li>Animal Planet 304</li>
+            <li>NatGeo 328</li>
+            <li>Nat Geo Wild 745</li>
+	    <li>History 322</li>
+            <li>FX 317</li>
+            <li>FXX 298</li>
+            <li>FX Movie 381</li>
+            <li>HBO 321</li>
+            <li>HBO Two 689</li>
+            <li>HBO Comedy 690</li>
+            <li>HBO Family 691</li>
+            <li>HBO Signature 693</li>
+            <li>HBO Zone 694</li>
+            <li>Cinemax 374</li>
+            <li>Showtime 333</li>
+            <li>Starz 335</li>
+            <li>Headline News 323</li>
+            <li>Bravo 307</li>
+            <li>IFC 656</li>
+            <li>Paramount 334</li>
+            <li>RaiOne 850</li>
+            <li>Rai Two 851</li>
+            <li>Rai Three 852</li>
+            <li>Rai Premium 858</li>
+            <li>MTV 371</li>
+            <li>Vice 659</li>
+            <li>Sky CinSelect 672</li>
+            <li>Sky CinHorror 681</li>
+            <li>Fight Network 757</li>
+            <li>MMA 50</li>
+            <li>XXX 505</li>
+            <li>XXX 506</li>
+            <li>XXX 508</li>
+            <li>XXX 509</li>
+            <li>XXX 510</li>
+        </ul>
+    </div>
 </body>
 </html>
