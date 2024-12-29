@@ -28,9 +28,9 @@ struct WaveformCircle: View {
                 )
             }
             
-            // Outer circle with glow
+            // Outer circle with glow (thinner)
             Circle()
-                .stroke(Color(hue: hue, saturation: 1, brightness: 1), lineWidth: 4)
+                .stroke(Color(hue: hue, saturation: 1, brightness: 1), lineWidth: 2)
                 .frame(width: 80, height: 80)
                 .shadow(color: Color(hue: hue, saturation: 1, brightness: 1).opacity(0.5), radius: 2)
             
@@ -67,14 +67,11 @@ struct RotatingCurve: View {
                     .opacity(0.8 - Double(index) * 0.08),
                 lineWidth: 2
             )
-            .frame(width: 65, height: 65)
+            .frame(width: 75, height: 75) // Slightly larger for longer curves
             .rotationEffect(.degrees(rotation))
-            .onAppear {
-                rotation = Double(index) * 40
-            }
             .onChange(of: isRecording) { _, newValue in
                 if newValue {
-                    withAnimation(.linear(duration: 2.0 + Double(index) * 0.8).repeatForever(autoreverses: false)) {
+                    withAnimation(.linear(duration: 1.5 + Double(index) * 0.6).repeatForever(autoreverses: false)) { // Faster spin
                         rotation += 360 * direction
                     }
                 } else {
@@ -275,15 +272,15 @@ struct RecorderView: View {
                 WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0, rotationDirection: 1, hue: hue)
                 WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0.05, rotationDirection: -1, hue: hue)
             }
-            .padding(.vertical, 20)
+            .padding(.vertical, 12) // Tighter padding
             .background(Color.black)
             
             // Controls
-            RecordingControlsView(isRecording: $isRecording)
+            RecordingControlsView(isRecording: $isRecording, hue: hue)
                 .onChange(of: isRecording) { _, newValue in
                     onRecordingStateChanged(newValue)
                 }
-                .padding(.vertical, 10)
+                .padding(.vertical, 8) // Tighter padding
             
             // Updated minimal color control with centered green
             MinimalSlider(value: $hue, range: 0...1)
