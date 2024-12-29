@@ -6,41 +6,40 @@ struct WaveformCircle: View {
     let audioLevel: CGFloat
     let animationDelay: Double
     let rotationDirection: Double
-    let hue: Double
     
-    init(isRecording: Bool, audioLevel: CGFloat, animationDelay: Double, rotationDirection: Double, hue: Double) {
+    init(isRecording: Bool, audioLevel: CGFloat, animationDelay: Double, rotationDirection: Double) {
         self.isRecording = isRecording
         self.audioLevel = audioLevel
         self.animationDelay = animationDelay
         self.rotationDirection = rotationDirection
-        self.hue = hue
     }
     
     var body: some View {
         ZStack {
-            // Reduced number of S-curves from 9 to 6
+            // Reduced number of S-curves with longer paths
             ForEach(0..<6, id: \.self) { i in
                 RotatingCurve(
                     isRecording: isRecording,
                     index: i,
-                    hue: hue,
-                    direction: rotationDirection
+                    direction: rotationDirection,
+                    isLeftWheel: rotationDirection == -1
                 )
             }
             
             // Tighter outer circle
             Circle()
-                .stroke(Color(hue: hue, saturation: 1, brightness: 1), lineWidth: 2)
+                .stroke(Color.green, lineWidth: 2)
                 .frame(width: 70, height: 70)
-                .shadow(color: Color(hue: hue, saturation: 1, brightness: 1).opacity(0.5), radius: 2)
+                .shadow(color: Color.green.opacity(0.5), radius: 2)
             
-            // Center dot with pulsing animation
+            // Center dot remains the same
             Circle()
                 .fill(Color.black)
                 .frame(width: 4, height: 4)
-                .shadow(color: Color(hue: hue, saturation: 1, brightness: 1), radius: 1)
+                .shadow(color: Color.green, radius: 1)
                 .modifier(PulsingModifier(isActive: isRecording))
         }
+        .scaleEffect(x: rotationDirection == 1 ? 1 : -1, y: 1)
     }
 }
 
@@ -48,41 +47,49 @@ struct WaveformCircle: View {
 struct RotatingCurve: View {
     let isRecording: Bool
     let index: Int
-    let hue: Double
     let direction: Double
+    let isLeftWheel: Bool
     @State private var rotation: Double
+    @State private var animationSpeed: Double = 1.0
     
-    init(isRecording: Bool, index: Int, hue: Double, direction: Double) {
+    init(isRecording: Bool, index: Int, direction: Double, isLeftWheel: Bool) {
         self.isRecording = isRecording
         self.index = index
-        self.hue = hue
         self.direction = direction
+        self.isLeftWheel = isLeftWheel
         _rotation = State(initialValue: Double(index) * 40)
     }
     
     var body: some View {
-        SCurveShape()
+        SCurveShape(isReversed: isLeftWheel)
             .stroke(
-                Color(hue: hue, saturation: 1, brightness: 1)
-                    .opacity(0.8 - Double(index) * 0.08),
+                Color.green.opacity(0.8),
                 lineWidth: 1
             )
-            .frame(width: 55, height: 55)
+            .frame(width: 70, height: 70)
             .rotationEffect(.degrees(rotation))
             .onAppear {
                 rotation = Double(index) * 40
+                startRotation()
             }
-            .onChange(of: isRecording) { _, newValue in
-                if newValue {
-                    withAnimation(.linear(duration: 1.5 + Double(index) * 0.6).repeatForever(autoreverses: false)) {
-                        rotation += 360 * direction
-                    }
-                } else {
-                    withAnimation(.easeInOut(duration: 0.5)) {
-                        rotation = Double(index) * 40
-                    }
-                }
+            .onChange(of: isRecording) { _, _ in
+                startRotation()
             }
+    }
+    
+    private func startRotation() {
+        if isRecording {
+            animationSpeed = 1.0
+            // Slower base speed (increased duration)
+            withAnimation(.linear(duration: 2.0 + Double(index) * 0.6).repeatForever(autoreverses: false)) {
+                rotation += 360 * direction * (isLeftWheel ? -1 : 1)
+            }
+        } else {
+            // Even slower when not recording (15% speed)
+            withAnimation(.linear(duration: (2.0 + Double(index) * 0.6) / 0.15).repeatForever(autoreverses: false)) {
+                rotation += 360 * direction * (isLeftWheel ? -1 : 1)
+            }
+        }
     }
 }
 
@@ -152,24 +159,41 @@ struct MinimalSlider: View {
 
 // S-curve shape definition
 struct SCurveShape: Shape {
+    let isReversed: Bool
+    
     func path(in rect: CGRect) -> Path {
         var path = Path()
         let width = rect.width
         let height = rect.height
         
-        // Match the SVG path: "M 0 -70 C 40 -70, 40 0, 0 0 C -40 0, -40 70, 0 70"
-        // Scaled and translated to fit our view size
+        // Start from top of circle
         path.move(to: CGPoint(x: width/2, y: 0))
-        path.addCurve(
-            to: CGPoint(x: width/2, y: height/2),
-            control1: CGPoint(x: width * 0.8, y: 0),
-            control2: CGPoint(x: width * 0.8, y: height/2)
-        )
-        path.addCurve(
-            to: CGPoint(x: width/2, y: height),
-            control1: CGPoint(x: width * 0.2, y: height/2),
-            control2: CGPoint(x: width * 0.2, y: height)
-        )
+        
+        if isReversed {
+            // Reversed S-curve for left wheel
+            path.addCurve(
+                to: CGPoint(x: width/2, y: height/2),
+                control1: CGPoint(x: width * 0.15, y: 0),
+                control2: CGPoint(x: width * 0.15, y: height/2)
+            )
+            path.addCurve(
+                to: CGPoint(x: width/2, y: height),
+                control1: CGPoint(x: width * 0.85, y: height/2),
+                control2: CGPoint(x: width * 0.85, y: height)
+            )
+        } else {
+            // Normal S-curve for right wheel
+            path.addCurve(
+                to: CGPoint(x: width/2, y: height/2),
+                control1: CGPoint(x: width * 0.85, y: 0),
+                control2: CGPoint(x: width * 0.85, y: height/2)
+            )
+            path.addCurve(
+                to: CGPoint(x: width/2, y: height),
+                control1: CGPoint(x: width * 0.15, y: height/2),
+                control2: CGPoint(x: width * 0.15, y: height)
+            )
+        }
         
         return path
     }
@@ -178,7 +202,6 @@ struct SCurveShape: Shape {
 struct RecorderView: View {
     @Binding var isRecording: Bool
     @Binding var selectedCategory: BehaviorCategory?
-    @Binding var hue: Double
     let onRecordingStateChanged: (Bool) -> Void
     @State private var isPulsing = false
     @State private var audioLevel: CGFloat = 0.0
@@ -237,8 +260,8 @@ struct RecorderView: View {
                     GeometryReader { geometry in
                         Text(getNegationAffirmation(for: category))
                             .font(.system(.title3, design: .monospaced))
-                            .foregroundColor(Color(hue: hue, saturation: 1, brightness: 1))
-                            .shadow(color: Color(hue: hue, saturation: 1, brightness: 1).opacity(0.5), radius: 2)
+                            .foregroundColor(.green)
+                            .shadow(color: Color.green.opacity(0.5), radius: 2)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .scaleEffect(isPulsing ? 1.45 : 0.6)
                             .opacity(isPulsing ? 1.0 : 0.7)
@@ -263,8 +286,8 @@ struct RecorderView: View {
                 } else {
                     Text("SELECT CATEGORY")
                         .font(.system(.title3, design: .monospaced))
-                        .foregroundColor(Color(hue: hue, saturation: 1, brightness: 1))
-                        .shadow(color: Color(hue: hue, saturation: 1, brightness: 1).opacity(0.5), radius: 2)
+                        .foregroundColor(.green)
+                        .shadow(color: Color.green.opacity(0.5), radius: 2)
                 }
             }
             .frame(height: 60)
@@ -272,8 +295,8 @@ struct RecorderView: View {
             
             // Waveform Display
             HStack(spacing: 40) {
-                WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0, rotationDirection: 1, hue: hue)
-                WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0.05, rotationDirection: -1, hue: hue)
+                WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0, rotationDirection: 1)
+                WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0.05, rotationDirection: -1)
             }
             .padding(.vertical, 20)
             .background(Color.black)
@@ -285,10 +308,7 @@ struct RecorderView: View {
                 }
                 .padding(.vertical, 10)
             
-            // Updated minimal color control with centered green
-            MinimalSlider(value: $hue, range: 0...1)
-                .padding(.horizontal)
-                .frame(width: 200)
+            // Remove the MinimalSlider since we're not using hue anymore
         }
         .background(
             RoundedRectangle(cornerRadius: 16)
@@ -305,7 +325,6 @@ struct RecorderView: View {
     RecorderView(
         isRecording: .constant(false),
         selectedCategory: .constant(nil),
-        hue: .constant(0.5),
         onRecordingStateChanged: { _ in }
     )
     .frame(width: 500, height: 200)

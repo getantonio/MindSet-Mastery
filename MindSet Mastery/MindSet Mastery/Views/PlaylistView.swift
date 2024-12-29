@@ -9,7 +9,7 @@ struct PlaylistView: View {
     ) private var recordings: FetchedResults<Recording>
     
     var body: some View {
-        Group {
+        List {
             if recordings.isEmpty {
                 ContentUnavailableView(
                     "No Recordings",
@@ -17,15 +17,14 @@ struct PlaylistView: View {
                     description: Text("Start recording affirmations to see them here")
                 )
             } else {
-                List {
-                    ForEach(recordings) { recording in
-                        RecordingRow(recording: recording)
-                    }
-                    .onDelete(perform: deleteRecordings)
+                ForEach(recordings) { recording in
+                    RecordingRow(recording: recording)
                 }
+                .onDelete(perform: deleteRecordings)
             }
         }
         .navigationTitle(Playlist.defaultName)
+        .frame(minWidth: 400, minHeight: 300)  // Add minimum size
     }
     
     private func deleteRecordings(offsets: IndexSet) {

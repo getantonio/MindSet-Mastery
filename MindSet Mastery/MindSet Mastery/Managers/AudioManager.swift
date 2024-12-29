@@ -32,6 +32,7 @@ class AudioManager: NSObject, AudioManaging {
     private var timer: Timer?
     private var audioLevelTimer: Timer?
     private var captureSession: AVCaptureSession?
+    private var currentURL: URL?
     
     override init() {
         super.init()
@@ -72,71 +73,53 @@ class AudioManager: NSObject, AudioManaging {
     }
     
     func startRecording(for category: BehaviorCategory) {
-        switch AVCaptureDevice.authorizationStatus(for: .audio) {
-        case .authorized:
-            beginRecording(for: category)
-        case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-                if granted {
-                    DispatchQueue.main.async {
-                        self?.beginRecording(for: category)
-                    }
-                }
-            }
-        default:
-            print("Microphone access not authorized")
-            return
+        print("Starting new recording for category: \(category.name)")
+        
+        // Always stop any existing recording first
+        if isRecording {
+            print("Stopping existing recording before starting new one")
+            stopRecording()
         }
-    }
-    
-    private func beginRecording(for category: BehaviorCategory) {
+        
+        let audioFilename = getDocumentsDirectory().appendingPathComponent("\(UUID().uuidString).m4a")
+        print("New recording path: \(audioFilename.path)")
+        
+        let settings = [
+            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+            AVSampleRateKey: 44100,
+            AVNumberOfChannelsKey: 2,
+            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+        ]
+        
         do {
-            let settings: [String: Any] = [
-                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-                AVSampleRateKey: 44100,
-                AVNumberOfChannelsKey: 2,
-                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-            ]
-            
-            let documentPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let timestamp = Date().timeIntervalSince1970
-            let filename = "\(category.name)_\(timestamp).m4a"
-            let audioFilename = documentPath.appendingPathComponent(filename)
-            
-            print("Starting recording to: \(audioFilename.path)")
-            
             audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
             audioRecorder?.delegate = self
             audioRecorder?.isMeteringEnabled = true
-            audioRecorder?.record()
             
-            isRecording = true
-            startTimer()
-            
-            // Start monitoring audio levels
-            startAudioLevelMonitoring()
+            if audioRecorder?.record() == true {
+                currentURL = audioFilename
+                isRecording = true
+                print("Recording started successfully")
+                startTimer()
+            } else {
+                print("Failed to start recording")
+            }
         } catch {
-            print("Could not start recording: \(error)")
+            print("Error setting up recording: \(error)")
         }
-    }
-    
-    private func startAudioLevelMonitoring() {
-        audioLevelTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            self?.updateAudioLevel()
-        }
-    }
-    
-    private func updateAudioLevel() {
-        audioRecorder?.updateMeters()
-        let peakPower = audioRecorder?.peakPower(forChannel: 0) ?? -160
-        let normalized = (peakPower + 160) / 160
-        audioLevel = max(0, min(1, CGFloat(normalized)))
     }
     
     func stopRecording() -> URL? {
-        audioRecorder?.stop()
-        let url = audioRecorder?.url
+        guard isRecording, let recorder = audioRecorder else {
+            print("No active recording to stop")
+            return nil
+        }
+        
+        print("Stopping recording...")
+        recorder.stop()
+        let url = currentURL
         audioRecorder = nil
+        currentURL = nil
         isRecording = false
         stopTimer()
         
@@ -144,11 +127,11 @@ class AudioManager: NSObject, AudioManaging {
             print("Recording stopped, file saved at: \(url.path)")
         }
         
-        audioLevelTimer?.invalidate()
-        audioLevelTimer = nil
-        audioLevel = 0
-        
         return url
+    }
+    
+    private func getDocumentsDirectory() -> URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
     }
     
     func startPlayback(recording: Recording) {

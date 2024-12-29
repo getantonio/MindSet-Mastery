@@ -11,43 +11,41 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedCategory: BehaviorCategory?
     @State private var isRecording = false
-    @State private var hue: Double = 0.5
+    @State private var showPlaylist = false
     @StateObject private var affirmationsVM = AffirmationsViewModel()
     @StateObject private var audioManager = AudioManager()
     @Environment(\.managedObjectContext) private var viewContext
     @State private var showMicrophoneAlert = false
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 32) {
-                // Title Box
-                VStack(spacing: 8) {
-                    Text("Transform Your Mindset")
-                        .font(.title.bold())
-                        .foregroundColor(Color(hue: hue, saturation: 1, brightness: 1))
-                        .shadow(color: Color(hue: hue, saturation: 1, brightness: 1).opacity(0.3), radius: 2)
-                    Text("Record daily affirmations to rewire your thoughts")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding()
-                .frame(maxWidth: 500) // Match recorder width
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.windowBackgroundColor))
-                        .shadow(radius: 2)
-                )
-                .padding(.top)
-                .padding(.bottom, 32) // Add gap under title box
-                
-                // Main content with fixed width
-                VStack(spacing: 24) {
-                    // Recorder Section
-                    RecorderView(
-                        isRecording: $isRecording,
-                        selectedCategory: $selectedCategory,
-                        hue: $hue
-                    ) { isRecording in
+        VStack(spacing: 32) {
+            // Title Box
+            VStack(spacing: 8) {
+                Text("Transform Your Mindset")
+                    .font(.title.bold())
+                    .foregroundColor(.green)
+                    .shadow(color: Color.green.opacity(0.3), radius: 2)
+                Text("Record and loop affirmations to rewire your thoughts")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: 500) // Match recorder width
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(.windowBackgroundColor))
+                    .shadow(radius: 2)
+            )
+            .padding(.top)
+            .padding(.bottom, 32) // Add gap under title box
+            
+            // Main content with fixed width
+            VStack(spacing: 24) {
+                // Recorder Section
+                RecorderView(
+                    isRecording: $isRecording,
+                    selectedCategory: $selectedCategory,
+                    onRecordingStateChanged: { isRecording in
                         if isRecording {
                             guard let category = selectedCategory else {
                                 self.isRecording = false
@@ -60,68 +58,68 @@ struct ContentView: View {
                             saveRecording(url: url, category: selectedCategory!)
                         }
                     }
-                    .padding(.bottom, 16)
-                    
-                    // Category Selection
-                    Menu {
-                        ForEach(BehaviorCategory.categories) { category in
-                            Button(category.name) {
-                                selectedCategory = category
-                                affirmationsVM.refreshAffirmations(for: category)
-                            }
-                        }
-                    } label: {
-                        Label(
-                            selectedCategory?.name ?? "Select",
-                            systemImage: "chevron.down.circle.fill"
-                        )
-                        .font(.headline)
-                        .foregroundColor(Color(hue: hue, saturation: 1, brightness: 1))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .frame(maxWidth: .infinity)
-                        .background(Color(.windowBackgroundColor))
-                        .cornerRadius(8)
-                    }
-                    .padding(.vertical, 16)
-                    .frame(width: menuWidth)  // Use dynamic width
-                    
-                    if let category = selectedCategory {
-                        ScrollView {
-                            VStack(spacing: 24) {
-                                affirmationsSection(for: category)
-                            }
-                            .padding()
-                        }
-                    }
-                }
-                .frame(maxWidth: 600)  // Maximum width for the entire content
+                )
+                .padding(.bottom, 16)
                 
-                Spacer()
-            }
-            .padding(.horizontal)
-            .navigationTitle("")  // Remove navigation title
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    NavigationLink(destination: PlaylistView().environment(\.managedObjectContext, viewContext)) {
-                        Image(systemName: "music.note.list")
+                // Category Selection
+                Menu {
+                    ForEach(BehaviorCategory.categories) { category in
+                        Button(category.name) {
+                            selectedCategory = category
+                            affirmationsVM.refreshAffirmations(for: category)
+                        }
+                    }
+                } label: {
+                    Label(
+                        selectedCategory?.name ?? "Select",
+                        systemImage: "chevron.down.circle.fill"
+                    )
+                    .font(.headline)
+                    .foregroundColor(.green)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity)
+                    .background(Color(.windowBackgroundColor))
+                    .cornerRadius(8)
+                }
+                .padding(.vertical, 16)
+                .frame(width: menuWidth)  // Use dynamic width
+                
+                if let category = selectedCategory {
+                    ScrollView {
+                        VStack(spacing: 24) {
+                            affirmationsSection(for: category)
+                        }
+                        .padding()
                     }
                 }
             }
+            .frame(maxWidth: 600)  // Maximum width for the entire content
+            
+            Spacer()
         }
-        .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("ShowMicrophoneAccessAlert"))) { _ in
-            showMicrophoneAlert = true
-        }
-        .alert("Microphone Access Required", isPresented: $showMicrophoneAlert) {
-            Button("Open Settings") {
-                if let settingsURL = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") {
-                    NSWorkspace.shared.open(settingsURL)
+        .padding(.horizontal)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button(action: {
+                    print("Opening playlist window...")
+                    showPlaylist = true
+                }) {
+                    Image(systemName: "music.note.list")
+                        .foregroundColor(.green)
                 }
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Please enable microphone access in System Settings to record affirmations.")
         }
+        .sheet(isPresented: $showPlaylist) {
+            NavigationView {
+                PlaylistView()
+                    .environment(\.managedObjectContext, viewContext)
+                    .frame(minWidth: 400, minHeight: 300)
+            }
+        }
+        
+        Text("Select a recording to play")
+            .foregroundColor(.secondary)
     }
     
     private var recordingTips: some View {
@@ -166,11 +164,11 @@ struct ContentView: View {
             }) {
                 Image(systemName: "arrow.clockwise")
                     .font(.title2)
-                    .foregroundColor(.blue)
+                    .foregroundColor(.white)
             }
             .buttonStyle(.plain)
-            .frame(width: 66, height: 25) // 15% taller
-            .background(Color(.windowBackgroundColor))
+            .frame(width: 66, height: 25)
+            .background(Color(.darkGray))
             .cornerRadius(8)
             .disabled(affirmationsVM.isLoading)
             .overlay {
@@ -183,7 +181,7 @@ struct ContentView: View {
     }
     
     private func saveRecording(url: URL, category: BehaviorCategory) {
-        print("Creating recording for: \(category.name)")
+        print("Saving recording at path: \(url.path)")
         
         // Get or create default playlist
         guard let playlist = viewContext.getOrCreateDefaultPlaylist() else {
@@ -195,7 +193,7 @@ struct ContentView: View {
         recording.id = UUID()
         recording.title = "Affirmation - \(category.name)"
         recording.categoryName = category.name
-        recording.filePath = url.path
+        recording.filePath = url.absoluteString // Change to absoluteString
         recording.createdAt = Date()
         recording.duration = 0
         
@@ -205,6 +203,11 @@ struct ContentView: View {
         do {
             try viewContext.save()
             print("Successfully saved recording to playlist: \(Playlist.defaultName)")
+            
+            // Force a refresh of the UI
+            DispatchQueue.main.async {
+                self.showPlaylist = true
+            }
         } catch {
             print("Error saving recording: \(error)")
             viewContext.rollback()
