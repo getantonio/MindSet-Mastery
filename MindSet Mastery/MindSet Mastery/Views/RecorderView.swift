@@ -50,7 +50,6 @@ struct RotatingCurve: View {
     let direction: Double
     let isLeftWheel: Bool
     @State private var rotation: Double
-    @State private var animationSpeed: Double = 1.0
     
     init(isRecording: Bool, index: Int, direction: Double, isLeftWheel: Bool) {
         self.isRecording = isRecording
@@ -68,29 +67,22 @@ struct RotatingCurve: View {
             )
             .frame(width: 70, height: 70)
             .rotationEffect(.degrees(rotation))
-            .onAppear {
-                rotation = Double(index) * 40
-                startRotation()
-            }
             .onChange(of: isRecording) { _, newValue in
-                withAnimation(.easeInOut(duration: 0.5)) {
-                    animationSpeed = newValue ? 1.0 : 0.15
+                if newValue {
+                    // Start animation
+                    withAnimation(
+                        .linear(duration: 3.0 - (Double(index) * 0.3))
+                        .repeatForever(autoreverses: false)
+                    ) {
+                        rotation += 360 * direction * (isLeftWheel ? -1 : 1)
+                    }
+                } else {
+                    // Stop animation completely
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        rotation = Double(index) * 40  // Reset to initial position
+                    }
                 }
-                startRotation()
             }
-    }
-    
-    private func startRotation() {
-        // Base duration that gets faster with each curve
-        let baseDuration = 3.0 - (Double(index) * 0.3)
-        let finalDuration = baseDuration / animationSpeed
-        
-        withAnimation(
-            .linear(duration: finalDuration)
-            .repeatForever(autoreverses: false)
-        ) {
-            rotation += 360 * direction * (isLeftWheel ? -1 : 1)
-        }
     }
 }
 
