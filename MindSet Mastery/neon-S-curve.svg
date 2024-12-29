@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-100 -100 200 200">
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    
+    <filter id="dot-glow">
+      <feGaussianBlur stdDeviation="0.5" result="blur1"/>
+      <feGaussianBlur stdDeviation="1" result="blur2"/>
+      <feMerge>
+        <feMergeNode in="blur2"/>
+        <feMergeNode in="blur1"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <path id="s-curve" 
+          d="M 0 -70 
+             C 40 -70, 40 0, 0 0
+             C -40 0, -40 70, 0 70" 
+          fill="none" 
+          stroke-width="2"/>
+  </defs>
+
+  <rect width="200" height="200" x="-100" y="-100" fill="black"/>
+  
+  <g filter="url(#glow)">
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="2s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="40" to="400" dur="2.8s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="80" to="440" dur="3.6s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="120" to="480" dur="4.4s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="160" to="520" dur="5.2s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="200" to="560" dur="6s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="240" to="600" dur="6.8s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="280" to="640" dur="7.6s" repeatCount="indefinite"/>
+    </use>
+    <use href="#s-curve" stroke="#00ff00">
+      <animateTransform attributeName="transform" type="rotate" from="320" to="680" dur="8.4s" repeatCount="indefinite"/>
+    </use>
+  </g>
+
+  <circle cx="0" cy="0" r="2.1" fill="black" filter="url(#dot-glow)" opacity="0.95">
+    <animate 
+      attributeName="r"
+      values="2.1;4.2;2.1"
+      dur="2s"
+      repeatCount="indefinite"/>
+  </circle>
+</svg>

@@ -1,0 +1,15 @@
+{
+    "categories": [
+        {
+            "id": "emotional-mastery",
+            "name": "Emotional Mastery",
+            "affirmations": [
+                { "text": "I am the master of my emotions and respond with calmness", "category": "emotional-mastery" },
+                { "text": "I allow myself to feel without being overwhelmed", "category": "emotional-mastery" },
+                { "text": "Every emotion I experience teaches me something valuable", "category": "emotional-mastery" },
+                // ... rest of emotional mastery affirmations
+            ]
+        },
+        // ... rest of categories
+    ]
+} 
