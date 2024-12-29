@@ -18,8 +18,8 @@ struct WaveformCircle: View {
     
     var body: some View {
         ZStack {
-            // S-curves with different rotation speeds
-            ForEach(0..<9, id: \.self) { i in
+            // Reduced number of S-curves from 9 to 6
+            ForEach(0..<6, id: \.self) { i in
                 RotatingCurve(
                     isRecording: isRecording,
                     index: i,
@@ -28,10 +28,10 @@ struct WaveformCircle: View {
                 )
             }
             
-            // Outer circle with glow (thinner)
+            // Tighter outer circle
             Circle()
                 .stroke(Color(hue: hue, saturation: 1, brightness: 1), lineWidth: 2)
-                .frame(width: 80, height: 80)
+                .frame(width: 70, height: 70)
                 .shadow(color: Color(hue: hue, saturation: 1, brightness: 1).opacity(0.5), radius: 2)
             
             // Center dot with pulsing animation
@@ -65,13 +65,16 @@ struct RotatingCurve: View {
             .stroke(
                 Color(hue: hue, saturation: 1, brightness: 1)
                     .opacity(0.8 - Double(index) * 0.08),
-                lineWidth: 2
+                lineWidth: 1
             )
-            .frame(width: 75, height: 75) // Slightly larger for longer curves
+            .frame(width: 55, height: 55)
             .rotationEffect(.degrees(rotation))
+            .onAppear {
+                rotation = Double(index) * 40
+            }
             .onChange(of: isRecording) { _, newValue in
                 if newValue {
-                    withAnimation(.linear(duration: 1.5 + Double(index) * 0.6).repeatForever(autoreverses: false)) { // Faster spin
+                    withAnimation(.linear(duration: 1.5 + Double(index) * 0.6).repeatForever(autoreverses: false)) {
                         rotation += 360 * direction
                     }
                 } else {
@@ -272,15 +275,15 @@ struct RecorderView: View {
                 WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0, rotationDirection: 1, hue: hue)
                 WaveformCircle(isRecording: isRecording, audioLevel: audioLevel, animationDelay: 0.05, rotationDirection: -1, hue: hue)
             }
-            .padding(.vertical, 12) // Tighter padding
+            .padding(.vertical, 20)
             .background(Color.black)
             
             // Controls
-            RecordingControlsView(isRecording: $isRecording, hue: hue)
+            RecordingControlsView(isRecording: $isRecording)
                 .onChange(of: isRecording) { _, newValue in
                     onRecordingStateChanged(newValue)
                 }
-                .padding(.vertical, 8) // Tighter padding
+                .padding(.vertical, 10)
             
             // Updated minimal color control with centered green
             MinimalSlider(value: $hue, range: 0...1)

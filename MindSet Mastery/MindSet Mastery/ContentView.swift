@@ -77,7 +77,6 @@ struct ContentView: View {
                         )
                         .font(.headline)
                         .foregroundColor(Color(hue: hue, saturation: 1, brightness: 1))
-                        .tint(Color(hue: hue, saturation: 1, brightness: 1))
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
                         .frame(maxWidth: .infinity)
