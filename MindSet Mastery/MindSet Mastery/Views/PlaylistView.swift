@@ -3,9 +3,12 @@ import CoreData
 
 struct PlaylistView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.dismiss) private var dismiss
+    @StateObject private var audioManager = AudioManager()
+    
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Recording.createdAt, ascending: false)],
-        predicate: NSPredicate(format: "playlist.name == %@", Playlist.defaultName)
+        predicate: NSPredicate(format: "playlist.name == %@", PlaylistManager.defaultPlaylistName)
     ) private var recordings: FetchedResults<Recording>
     
     var body: some View {
@@ -19,17 +22,34 @@ struct PlaylistView: View {
             } else {
                 ForEach(recordings) { recording in
                     RecordingRow(recording: recording)
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                deleteRecording(recording)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                 }
-                .onDelete(perform: deleteRecordings)
             }
         }
-        .navigationTitle(Playlist.defaultName)
-        .frame(minWidth: 400, minHeight: 300)  // Add minimum size
+        .navigationTitle(PlaylistManager.defaultPlaylistName)
+        .frame(minWidth: 400, minHeight: 300)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
     }
     
-    private func deleteRecordings(offsets: IndexSet) {
+    private func deleteRecording(_ recording: Recording) {
         withAnimation {
-            offsets.map { recordings[$0] }.forEach(viewContext.delete)
+            if let path = recording.filePath {
+                let url = URL(fileURLWithPath: path)
+                try? FileManager.default.removeItem(at: url)
+            }
+            viewContext.delete(recording)
             try? viewContext.save()
         }
     }
@@ -40,9 +60,9 @@ struct PlaylistRow: View {
     
     var body: some View {
         VStack(alignment: .leading) {
-            Text(playlist.name)
+            Text(playlist.name ?? "Untitled Playlist")
                 .font(.headline)
-            Text("\(playlist.recordings.count) recordings")
+            Text("\(playlist.recordings?.count ?? 0) recordings")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
@@ -106,21 +126,25 @@ struct PlaylistDetailView: View {
     
     var body: some View {
         List {
-            ForEach(Array(playlist.recordings)) { recording in
-                RecordingRow(recording: recording)
+            if let recordings = playlist.recordings {
+                ForEach(Array(recordings)) { recording in
+                    RecordingRow(recording: recording)
+                }
+                .onDelete(perform: deleteRecordings)
             }
-            .onDelete(perform: deleteRecordings)
         }
-        .navigationTitle(playlist.name)
+        .navigationTitle(playlist.name ?? "Playlist")
     }
     
     private func deleteRecordings(offsets: IndexSet) {
         withAnimation {
-            let recordingsArray = Array(playlist.recordings)
-            offsets.map { recordingsArray[$0] }.forEach { recording in
-                viewContext.delete(recording)
+            if let recordings = playlist.recordings {
+                let recordingsArray = Array(recordings)
+                offsets.map { recordingsArray[$0] }.forEach { recording in
+                    viewContext.delete(recording)
+                }
+                try? viewContext.save()
             }
-            try? viewContext.save()
         }
     }
 }
@@ -129,17 +153,17 @@ struct AddRecordingView: View {
     @ObservedObject var playlist: Playlist
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Recording.createdAt, ascending: false)],
         animation: .default
-    )
-    private var recordings: FetchedResults<Recording>
+    ) private var recordings: FetchedResults<Recording>
     
     var body: some View {
         NavigationStack {
             List {
                 ForEach(recordings) { recording in
-                    if !playlist.recordings.contains(recording) {
+                    if let playlistRecordings = playlist.recordings, !playlistRecordings.contains(recording) {
                         Button(action: { addRecording(recording) }) {
                             RecordingRow(recording: recording)
                         }
@@ -147,9 +171,6 @@ struct AddRecordingView: View {
                 }
             }
             .navigationTitle("Add Recording")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") {
@@ -162,7 +183,10 @@ struct AddRecordingView: View {
     
     private func addRecording(_ recording: Recording) {
         withAnimation {
-            playlist.recordings.insert(recording)
+            if playlist.recordings == nil {
+                playlist.recordings = Set<Recording>()
+            }
+            playlist.recordings?.insert(recording)
             try? viewContext.save()
             dismiss()
         }
@@ -171,29 +195,20 @@ struct AddRecordingView: View {
 
 struct RecordingRow: View {
     let recording: Recording
+    @StateObject private var audioManager = AudioManager()
     
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
-                Text(recording.title)
-                    .font(.headline)
-                Text(recording.categoryName)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            Text(formatDuration(recording.duration))
-                .font(.caption)
+        VStack(alignment: .leading) {
+            Text(recording.wrappedTitle)
+                .font(.headline)
+            Text(recording.wrappedCategoryName)
+                .font(.subheadline)
                 .foregroundColor(.secondary)
         }
         .padding(.vertical, 4)
-    }
-    
-    private func formatDuration(_ duration: Double) -> String {
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        return String(format: "%d:%02d", minutes, seconds)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            audioManager.startPlayback(recording: recording)
+        }
     }
 } 

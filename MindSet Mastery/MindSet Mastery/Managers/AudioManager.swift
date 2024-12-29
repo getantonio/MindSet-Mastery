@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import CoreData
 
 protocol AudioManaging: ObservableObject {
     var isRecording: Bool { get }
@@ -30,46 +31,10 @@ class AudioManager: NSObject, AudioManaging {
     private var audioRecorder: AVAudioRecorder?
     private var audioPlayer: AVAudioPlayer?
     private var timer: Timer?
-    private var audioLevelTimer: Timer?
-    private var captureSession: AVCaptureSession?
     private var currentURL: URL?
     
     override init() {
         super.init()
-        checkPermissionsAndSetup()
-    }
-    
-    private func checkPermissionsAndSetup() {
-        AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-            DispatchQueue.main.async {
-                if granted {
-                    print("Microphone access granted")
-                    self?.setupAudioCapture()
-                } else {
-                    print("Microphone access denied")
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("ShowMicrophoneAccessAlert"),
-                        object: nil
-                    )
-                }
-            }
-        }
-    }
-    
-    private func setupAudioCapture() {
-        captureSession = AVCaptureSession()
-        
-        guard let audioDevice = AVCaptureDevice.default(for: .audio),
-              let audioInput = try? AVCaptureDeviceInput(device: audioDevice),
-              let captureSession = captureSession else {
-            print("Failed to set up audio capture")
-            return
-        }
-        
-        if captureSession.canAddInput(audioInput) {
-            captureSession.addInput(audioInput)
-            print("Audio capture setup successful")
-        }
     }
     
     func startRecording(for category: BehaviorCategory) {
@@ -78,7 +43,7 @@ class AudioManager: NSObject, AudioManaging {
         // Always stop any existing recording first
         if isRecording {
             print("Stopping existing recording before starting new one")
-            stopRecording()
+            _ = stopRecording()
         }
         
         let audioFilename = getDocumentsDirectory().appendingPathComponent("\(UUID().uuidString).m4a")
@@ -118,6 +83,8 @@ class AudioManager: NSObject, AudioManaging {
         print("Stopping recording...")
         recorder.stop()
         let url = currentURL
+        
+        // Clean up
         audioRecorder = nil
         currentURL = nil
         isRecording = false
@@ -135,11 +102,12 @@ class AudioManager: NSObject, AudioManaging {
     }
     
     func startPlayback(recording: Recording) {
-        guard let urlString = recording.filePath,
-              let url = URL(string: urlString) else {
-            print("Invalid recording URL")
+        guard let filePath = recording.filePath else {
+            print("No file path found for recording")
             return
         }
+        
+        let url = URL(fileURLWithPath: filePath)
         
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
@@ -149,6 +117,7 @@ class AudioManager: NSObject, AudioManaging {
             isPlaying = true
             duration = audioPlayer?.duration ?? 0
             startTimer()
+            print("Started playback of: \(filePath)")
         } catch {
             print("Playback failed: \(error)")
         }

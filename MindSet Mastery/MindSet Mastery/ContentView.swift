@@ -45,19 +45,7 @@ struct ContentView: View {
                 RecorderView(
                     isRecording: $isRecording,
                     selectedCategory: $selectedCategory,
-                    onRecordingStateChanged: { isRecording in
-                        if isRecording {
-                            guard let category = selectedCategory else {
-                                self.isRecording = false
-                                return
-                            }
-                            print("Starting recording for category: \(category.name)")
-                            audioManager.startRecording(for: category)
-                        } else if let url = audioManager.stopRecording() {
-                            print("Stopped recording, saving...")
-                            saveRecording(url: url, category: selectedCategory!)
-                        }
-                    }
+                    onRecordingStateChanged: handleRecordingStateChanged
                 )
                 .padding(.bottom, 16)
                 
@@ -184,7 +172,8 @@ struct ContentView: View {
         print("Saving recording at path: \(url.path)")
         
         // Get or create default playlist
-        guard let playlist = viewContext.getOrCreateDefaultPlaylist() else {
+        guard let playlist = PlaylistManager.shared.getDefaultPlaylist(context: viewContext) ??
+                           PlaylistManager.shared.createDefaultPlaylist(context: viewContext) else {
             print("Failed to get/create default playlist")
             return
         }
@@ -193,21 +182,14 @@ struct ContentView: View {
         recording.id = UUID()
         recording.title = "Affirmation - \(category.name)"
         recording.categoryName = category.name
-        recording.filePath = url.absoluteString // Change to absoluteString
+        recording.filePath = url.path
         recording.createdAt = Date()
         recording.duration = 0
-        
-        // Add to default playlist
         recording.playlist = playlist
         
         do {
             try viewContext.save()
-            print("Successfully saved recording to playlist: \(Playlist.defaultName)")
-            
-            // Force a refresh of the UI
-            DispatchQueue.main.async {
-                self.showPlaylist = true
-            }
+            print("Successfully saved recording to playlist: \(playlist.name)")
         } catch {
             print("Error saving recording: \(error)")
             viewContext.rollback()
@@ -219,6 +201,20 @@ struct ContentView: View {
             .map { $0.name.count }
             .max() ?? 0
         return CGFloat(longestCategory) * 10 + 60 // 10 points per character plus padding
+    }
+    
+    private func handleRecordingStateChanged(_ isRecording: Bool) {
+        if isRecording {
+            guard let category = selectedCategory else {
+                self.isRecording = false
+                return
+            }
+            print("Starting recording for category: \(category.name)")
+            audioManager.startRecording(for: category)
+        } else if let url = audioManager.stopRecording() {
+            print("Stopped recording, saving...")
+            saveRecording(url: url, category: selectedCategory!)
+        }
     }
 }
 

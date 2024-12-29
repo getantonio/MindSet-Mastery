@@ -72,23 +72,24 @@ struct RotatingCurve: View {
                 rotation = Double(index) * 40
                 startRotation()
             }
-            .onChange(of: isRecording) { _, _ in
+            .onChange(of: isRecording) { _, newValue in
+                withAnimation(.easeInOut(duration: 0.5)) {
+                    animationSpeed = newValue ? 1.0 : 0.15
+                }
                 startRotation()
             }
     }
     
     private func startRotation() {
-        if isRecording {
-            animationSpeed = 1.0
-            // Slower base speed (increased duration)
-            withAnimation(.linear(duration: 2.0 + Double(index) * 0.6).repeatForever(autoreverses: false)) {
-                rotation += 360 * direction * (isLeftWheel ? -1 : 1)
-            }
-        } else {
-            // Even slower when not recording (15% speed)
-            withAnimation(.linear(duration: (2.0 + Double(index) * 0.6) / 0.15).repeatForever(autoreverses: false)) {
-                rotation += 360 * direction * (isLeftWheel ? -1 : 1)
-            }
+        // Base duration that gets faster with each curve
+        let baseDuration = 3.0 - (Double(index) * 0.3)
+        let finalDuration = baseDuration / animationSpeed
+        
+        withAnimation(
+            .linear(duration: finalDuration)
+            .repeatForever(autoreverses: false)
+        ) {
+            rotation += 360 * direction * (isLeftWheel ? -1 : 1)
         }
     }
 }
