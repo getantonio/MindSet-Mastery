@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var showMicrophoneAlert = false
     
     var body: some View {
-        VStack(spacing: 32) {
+        VStack(spacing: 16) {
             // Title Box
             VStack(spacing: 8) {
                 Text("Transform Your Mindset")
@@ -30,24 +30,24 @@ struct ContentView: View {
                     .foregroundColor(.secondary)
             }
             .padding()
-            .frame(maxWidth: 500) // Match recorder width
+            .frame(maxWidth: 500)
             .background(
                 RoundedRectangle(cornerRadius: 12)
                     .fill(Color(.windowBackgroundColor))
                     .shadow(radius: 2)
             )
-            .padding(.top)
-            .padding(.bottom, 32) // Add gap under title box
+            .padding(.top, 8)
+            .padding(.bottom, 16)
             
             // Main content with fixed width
-            VStack(spacing: 24) {
+            VStack(spacing: 16) {
                 // Recorder Section
                 RecorderView(
                     isRecording: $isRecording,
                     selectedCategory: $selectedCategory,
                     onRecordingStateChanged: handleRecordingStateChanged
                 )
-                .padding(.bottom, 16)
+                .padding(.bottom, 8)
                 
                 // Category Selection
                 Menu {
@@ -90,7 +90,6 @@ struct ContentView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button(action: {
-                    print("Opening playlist window...")
                     showPlaylist = true
                 }) {
                     Image(systemName: "music.note.list")
