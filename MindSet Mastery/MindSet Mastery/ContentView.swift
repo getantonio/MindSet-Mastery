@@ -6,6 +6,13 @@
 //
 
 import SwiftUI
+import AVFoundation
+import CoreData
+#if os(iOS)
+import UIKit
+#else
+import AppKit
+#endif
 
 struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
@@ -16,40 +23,86 @@ struct ContentView: View {
     @StateObject private var audioManager = AudioManager()
     @Environment(\.managedObjectContext) private var viewContext
     @State private var showMicrophoneAlert = false
+    @State private var rotationAngle = 0.0
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Title Box
-            VStack(spacing: 8) {
-                Text("Transform Your Mindset")
-                    .font(.title.bold())
-                    .foregroundColor(.green)
-                    .shadow(color: Color.green.opacity(0.3), radius: 2)
-                Text("Record and loop affirmations to rewire your thoughts")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-            }
-            .padding()
-            .frame(maxWidth: 500)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(.windowBackgroundColor))
-                    .shadow(radius: 2)
-            )
-            .padding(.top, 8)
-            .padding(.bottom, 16)
+        ZStack(alignment: .bottom) {
+            // Background
+            Color.black.edgesIgnoringSafeArea(.all)
             
-            // Main content with fixed width
             VStack(spacing: 16) {
-                // Recorder Section
-                RecorderView(
-                    isRecording: $isRecording,
-                    selectedCategory: $selectedCategory,
-                    onRecordingStateChanged: handleRecordingStateChanged
+                // Title Box
+                VStack(spacing: 8) {
+                    Text("Transform Your Mindset")
+                        .font(.title.bold())
+                        .foregroundColor(.green)
+                    Text("Record and loop affirmations to rewire your thoughts")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+                .padding()
+                .frame(maxWidth: 500)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.darkGray).opacity(0.3))
                 )
-                .padding(.bottom, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 16)
                 
                 // Category Selection
+                Text("SELECT CATEGORY")
+                    .font(.headline)
+                    .foregroundColor(.green)
+                    .padding(.top, 20)
+                
+                // Recorder Section with spinning circles
+                VStack(spacing: 30) {
+                    HStack(spacing: 40) {
+                        Circle()
+                            .stroke(Color.green, lineWidth: 2)
+                            .frame(width: 100, height: 100)
+                            .rotationEffect(.degrees(isRecording ? 360 : 0))
+                            .animation(
+                                isRecording ? 
+                                    Animation.linear(duration: 3.0).repeatForever(autoreverses: false) : 
+                                    .default,
+                                value: isRecording
+                            )
+                        Circle()
+                            .stroke(Color.green, lineWidth: 2)
+                            .frame(width: 100, height: 100)
+                            .rotationEffect(.degrees(isRecording ? -360 : 0))
+                            .animation(
+                                isRecording ? 
+                                    Animation.linear(duration: 3.0).repeatForever(autoreverses: false) : 
+                                    .default,
+                                value: isRecording
+                            )
+                    }
+                    
+                    // Record Button
+                    Button(action: {
+                        isRecording.toggle()
+                        handleRecordingStateChanged(isRecording)
+                    }) {
+                        Text("REC")
+                            .font(.system(.headline, design: .monospaced))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(isRecording ? Color.red : Color.gray.opacity(0.3))
+                            .cornerRadius(8)
+                    }
+                    .disabled(selectedCategory == nil)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.black)
+                        .shadow(color: .green.opacity(0.3), radius: 5)
+                )
+                
+                // Category Selection Menu
                 Menu {
                     ForEach(BehaviorCategory.categories) { category in
                         Button(category.name) {
@@ -58,55 +111,62 @@ struct ContentView: View {
                         }
                     }
                 } label: {
-                    Label(
-                        selectedCategory?.name ?? "Select",
-                        systemImage: "chevron.down.circle.fill"
-                    )
-                    .font(.headline)
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                        Text(selectedCategory?.name ?? "Select")
+                        Image(systemName: "chevron.down.circle.fill")
+                    }
                     .foregroundColor(.green)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .frame(maxWidth: .infinity)
-                    .background(Color(.windowBackgroundColor))
+                    .frame(width: menuWidth)
+                    .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
                 }
-                .padding(.vertical, 16)
-                .frame(width: menuWidth)  // Use dynamic width
                 
+                // Affirmations List
                 if let category = selectedCategory {
                     ScrollView {
-                        VStack(spacing: 24) {
-                            affirmationsSection(for: category)
+                        VStack(spacing: 12) {
+                            ForEach(category.defaultAffirmations, id: \.self) { affirmation in
+                                Text(affirmation)
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color.gray.opacity(0.2))
+                                    .cornerRadius(8)
+                            }
                         }
                         .padding()
                     }
+                    .frame(maxHeight: 200)
                 }
+                
+                Button(action: { showPlaylist = true }) {
+                    HStack {
+                        Image(systemName: "music.note.list")
+                        Text("My Playlists")
+                    }
+                    .foregroundColor(.green)
+                    .padding()
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(8)
+                }
+                
+                Spacer()
             }
-            .frame(maxWidth: 600)  // Maximum width for the entire content
+            .padding()
             
-            Spacer()
+            // Global Playback Control Bar
+            PlaybackControlBar()
         }
-        .padding(.horizontal)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button(action: {
-                    showPlaylist = true
-                }) {
-                    Image(systemName: "music.note.list")
-                        .foregroundColor(.green)
-                }
-            }
-        }
+        .preferredColorScheme(.dark)
         .sheet(isPresented: $showPlaylist) {
             NavigationView {
-                PlaylistView()
+                PlaylistManagerView()
                     .environment(\.managedObjectContext, viewContext)
-                    .frame(minWidth: 400, minHeight: 300)
             }
         }
-        
-        Text("Select a recording to play")
-            .foregroundColor(.secondary)
     }
     
     private var recordingTips: some View {
@@ -170,16 +230,16 @@ struct ContentView: View {
     private func saveRecording(url: URL, category: BehaviorCategory) {
         print("Saving recording at path: \(url.path)")
         
-        // Get or create default playlist
-        guard let playlist = PlaylistManager.shared.getDefaultPlaylist(context: viewContext) ??
-                           PlaylistManager.shared.createDefaultPlaylist(context: viewContext) else {
-            print("Failed to get/create default playlist")
-            return
-        }
+        // Get or create playlist for this category
+        let playlistName = category.name
+        let playlist = getOrCreatePlaylist(named: playlistName)
+        
+        // Get next recording number for this category
+        let recordingNumber = getNextRecordingNumber(for: category, in: playlist)
         
         let recording = Recording(context: viewContext)
         recording.id = UUID()
-        recording.title = "Affirmation - \(category.name)"
+        recording.title = "Affirmation \(recordingNumber) - \(category.name)"
         recording.categoryName = category.name
         recording.filePath = url.path
         recording.createdAt = Date()
@@ -188,11 +248,54 @@ struct ContentView: View {
         
         do {
             try viewContext.save()
-            print("Successfully saved recording to playlist: \(playlist.name)")
+            print("Successfully saved recording to playlist: \(playlist.name ?? "Unknown")")
         } catch {
             print("Error saving recording: \(error)")
             viewContext.rollback()
         }
+    }
+    
+    private func getOrCreatePlaylist(named name: String) -> Playlist {
+        // Try to find existing playlist
+        let request: NSFetchRequest<Playlist> = Playlist.fetchRequest()
+        request.predicate = NSPredicate(format: "name == %@", name)
+        request.fetchLimit = 1
+        
+        if let existingPlaylist = try? viewContext.fetch(request).first {
+            return existingPlaylist
+        }
+        
+        // Create new playlist if none exists
+        let playlist = Playlist(context: viewContext)
+        playlist.id = UUID()
+        playlist.name = name
+        playlist.createdAt = Date()
+        playlist.recordings = Set<Recording>()
+        
+        return playlist
+    }
+    
+    private func getNextRecordingNumber(for category: BehaviorCategory, in playlist: Playlist) -> Int {
+        guard let recordings = playlist.recordings else { return 1 }
+        
+        // Find highest number in existing recordings
+        let pattern = "Affirmation (\\d+) - \(category.name)"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [])
+        
+        let numbers = recordings.compactMap { recording -> Int? in
+            guard let title = recording.title,
+                  let match = regex?.firstMatch(
+                    in: title,
+                    options: [],
+                    range: NSRange(title.startIndex..., in: title)
+                  ),
+                  let range = Range(match.range(at: 1), in: title) else {
+                return nil
+            }
+            return Int(title[range])
+        }
+        
+        return (numbers.max() ?? 0) + 1
     }
     
     private var menuWidth: CGFloat {
@@ -208,8 +311,19 @@ struct ContentView: View {
                 self.isRecording = false
                 return
             }
-            print("Starting recording for category: \(category.name)")
-            audioManager.startRecording(for: category)
+            
+            // Request microphone permission if needed
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        print("Starting recording for category: \(category.name)")
+                        self.audioManager.startRecording(for: category)
+                    } else {
+                        self.showMicrophoneAlert = true
+                        self.isRecording = false
+                    }
+                }
+            }
         } else if let url = audioManager.stopRecording() {
             print("Stopped recording, saving...")
             saveRecording(url: url, category: selectedCategory!)

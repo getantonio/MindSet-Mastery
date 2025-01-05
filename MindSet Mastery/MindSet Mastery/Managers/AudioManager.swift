@@ -1,7 +1,14 @@
 import Foundation
 import AVFoundation
+import AVKit
+import MediaPlayer
 import Combine
 import CoreData
+#if os(iOS)
+import UIKit
+#else
+import AppKit
+#endif
 
 protocol AudioManaging: ObservableObject {
     var isRecording: Bool { get }
@@ -9,6 +16,8 @@ protocol AudioManaging: ObservableObject {
     var currentTime: TimeInterval { get }
     var duration: TimeInterval { get }
     var currentRecording: Recording? { get }
+    var currentPlaylist: Playlist? { get }
+    var isLooping: Bool { get }
     var audioLevel: CGFloat { get }
     
     func startRecording(for category: BehaviorCategory)
@@ -18,6 +27,9 @@ protocol AudioManaging: ObservableObject {
     func resumePlayback()
     func stopPlayback()
     func seek(to time: TimeInterval)
+    func setVolume(_ volume: Double)
+    func nextTrack()
+    func previousTrack()
 }
 
 class AudioManager: NSObject, AudioManaging {
@@ -26,6 +38,8 @@ class AudioManager: NSObject, AudioManaging {
     @Published private(set) var currentTime: TimeInterval = 0
     @Published private(set) var duration: TimeInterval = 0
     @Published private(set) var currentRecording: Recording?
+    @Published private(set) var currentPlaylist: Playlist?
+    @Published var isLooping = false
     @Published var audioLevel: CGFloat = 0.0
     
     private var audioRecorder: AVAudioRecorder?
@@ -35,11 +49,98 @@ class AudioManager: NSObject, AudioManaging {
     
     override init() {
         super.init()
+        setupVolumeControl()
+    }
+    
+    private func setupVolumeControl() {
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+            
+            #if os(iOS)
+            // Set up system volume control
+            let volumeView = MPVolumeView(frame: CGRect(x: -100, y: -100, width: 0, height: 0))
+            
+            // Use AVRoutePickerView for modern route selection
+            if #available(iOS 13.0, *) {
+                let routePicker = AVRoutePickerView(frame: CGRect.zero)
+                routePicker.isHidden = true  // Hide but keep functional
+            } else {
+                volumeView.showsRouteButton = false
+            }
+            #endif
+        } catch {
+            print("Error setting up audio session: \(error)")
+        }
+    }
+    
+    func setVolume(_ volume: Double) {
+        audioPlayer?.volume = Float(volume)
+    }
+    
+    func nextTrack() {
+        guard let currentPlaylist = currentPlaylist,
+              let recordings = currentPlaylist.recordings else {
+            return
+        }
+        
+        let recordingsArray = Array(recordings).sorted { $0.createdAt ?? Date() < $1.createdAt ?? Date() }
+        guard let currentIndex = recordingsArray.firstIndex(where: { $0.id == currentRecording?.id }) else {
+            return
+        }
+        
+        let nextIndex = (currentIndex + 1) % recordingsArray.count
+        startPlayback(recording: recordingsArray[nextIndex])
+    }
+    
+    func previousTrack() {
+        guard let currentPlaylist = currentPlaylist,
+              let recordings = currentPlaylist.recordings else {
+            return
+        }
+        
+        let recordingsArray = Array(recordings).sorted { $0.createdAt ?? Date() < $1.createdAt ?? Date() }
+        guard let currentIndex = recordingsArray.firstIndex(where: { $0.id == currentRecording?.id }) else {
+            return
+        }
+        
+        let previousIndex = (currentIndex - 1 + recordingsArray.count) % recordingsArray.count
+        startPlayback(recording: recordingsArray[previousIndex])
+    }
+    
+    private func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
+        AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            DispatchQueue.main.async {
+                completion(granted)
+            }
+        }
     }
     
     func startRecording(for category: BehaviorCategory) {
         print("Starting new recording for category: \(category.name)")
         
+        // Configure audio session
+        do {
+            try AVAudioSession.sharedInstance().setCategory(.playAndRecord, mode: .default)
+            try AVAudioSession.sharedInstance().setActive(true)
+        } catch {
+            print("Failed to set up audio session: \(error)")
+            return
+        }
+        
+        // Check permission before recording
+        requestMicrophonePermission { [weak self] granted in
+            guard let self = self else { return }
+            
+            if granted {
+                self.beginRecording(for: category)
+            } else {
+                print("Microphone permission denied")
+            }
+        }
+    }
+    
+    private func beginRecording(for category: BehaviorCategory) {
         // Always stop any existing recording first
         if isRecording {
             print("Stopping existing recording before starting new one")
@@ -102,24 +203,23 @@ class AudioManager: NSObject, AudioManaging {
     }
     
     func startPlayback(recording: Recording) {
-        guard let filePath = recording.filePath else {
-            print("No file path found for recording")
-            return
-        }
-        
+        guard let filePath = recording.filePath else { return }
         let url = URL(fileURLWithPath: filePath)
         
         do {
             audioPlayer = try AVAudioPlayer(contentsOf: url)
             audioPlayer?.delegate = self
-            audioPlayer?.play()
-            currentRecording = recording
-            isPlaying = true
-            duration = audioPlayer?.duration ?? 0
-            startTimer()
-            print("Started playback of: \(filePath)")
+            audioPlayer?.prepareToPlay()
+            
+            if audioPlayer?.play() == true {
+                currentRecording = recording
+                currentPlaylist = recording.playlist
+                isPlaying = true
+                duration = audioPlayer?.duration ?? 0
+                startTimer()
+            }
         } catch {
-            print("Playback failed: \(error)")
+            print("Error starting playback: \(error)")
         }
     }
     

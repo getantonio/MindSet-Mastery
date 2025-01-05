@@ -4,54 +4,102 @@ import CoreData
 struct PlaylistManagerView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @StateObject private var audioManager = AudioManager()
+    @State private var showNewPlaylistSheet = false
+    @State private var expandedPlaylists = Set<UUID>()
     
     @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \Playlist.createdAt, ascending: false)],
-        animation: .default
+        sortDescriptors: [NSSortDescriptor(keyPath: \Playlist.createdAt, ascending: false)]
     ) private var playlists: FetchedResults<Playlist>
     
-    @State private var showNewPlaylist = false
-    
     var body: some View {
-        NavigationStack {
-            List {
-                ForEach(playlists) { playlist in
-                    NavigationLink {
-                        PlaylistDetailView(playlist: playlist)
-                    } label: {
-                        PlaylistRow(playlist: playlist)
+        List {
+            ForEach(playlists) { playlist in
+                DisclosureGroup(
+                    isExpanded: Binding(
+                        get: { expandedPlaylists.contains(playlist.id!) },
+                        set: { isExpanded in
+                            if isExpanded {
+                                expandedPlaylists.insert(playlist.id!)
+                            } else {
+                                expandedPlaylists.remove(playlist.id!)
+                            }
+                        }
+                    )
+                ) {
+                    if let recordings = playlist.recordings {
+                        ForEach(Array(recordings)) { recording in
+                            RecordingRow(recording: recording)
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        deleteRecording(recording)
+                                    } label: {
+                                        Label("Delete", systemImage: "trash")
+                                    }
+                                }
+                        }
                     }
-                }
-                .onDelete(perform: deletePlaylists)
-            }
-            .navigationTitle("Playlists")
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    Button(action: { showNewPlaylist = true }) {
-                        Label("New Playlist", systemImage: "plus")
+                } label: {
+                    HStack {
+                        Text(playlist.name ?? "Untitled Playlist")
+                            .font(.headline)
+                        Spacer()
+                        Text("\(playlist.recordings?.count ?? 0) recordings")
+                            .foregroundColor(.secondary)
+                            .font(.caption)
                     }
-                }
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Done") {
-                        dismiss()
+                    .swipeActions(edge: .trailing) {
+                        if playlist.name != PlaylistManager.defaultPlaylistName {
+                            Button(role: .destructive) {
+                                deletePlaylist(playlist)
+                            } label: {
+                                Label("Delete", systemImage: "trash")
+                            }
+                        }
                     }
                 }
             }
         }
-        .sheet(isPresented: $showNewPlaylist) {
-            NewPlaylistView()
+        .navigationTitle("Playlists")
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showNewPlaylistSheet = true }) {
+                    Image(systemName: "plus")
+                }
+            }
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Done") {
+                    dismiss()
+                }
+            }
+        }
+        .sheet(isPresented: $showNewPlaylistSheet) {
+            NavigationView {
+                NewPlaylistView()
+                    .environment(\.managedObjectContext, viewContext)
+            }
         }
     }
     
-    private func deletePlaylists(offsets: IndexSet) {
-        withAnimation {
-            offsets.map { playlists[$0] }.forEach { playlist in
-                // Don't delete the default playlist
-                if playlist.name != PlaylistManager.defaultPlaylistName {
-                    viewContext.delete(playlist)
-                }
-            }
-            try? viewContext.save()
+    private func deleteRecording(_ recording: Recording) {
+        if let path = recording.filePath {
+            try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
         }
+        viewContext.delete(recording)
+        try? viewContext.save()
+    }
+    
+    private func deletePlaylist(_ playlist: Playlist) {
+        // Delete all recordings in the playlist
+        if let recordings = playlist.recordings {
+            for recording in recordings {
+                if let path = recording.filePath {
+                    try? FileManager.default.removeItem(at: URL(fileURLWithPath: path))
+                }
+                viewContext.delete(recording)
+            }
+        }
+        viewContext.delete(playlist)
+        try? viewContext.save()
     }
 } 

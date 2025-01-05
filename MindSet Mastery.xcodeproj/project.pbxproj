@@ -1,0 +1,39 @@
+// In both Debug and Release configurations under the app target:
+GENERATE_INFOPLIST_FILE = YES;
+INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need microphone access to record your affirmations";
+INFOPLIST_KEY_NSMicrophoneUsageDescription_Privacy = "Record affirmations";
+INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+DEVELOPMENT_ASSET_PATHS = "\"MindSet Mastery/Preview Content\"";
+CODE_SIGN_STYLE = Automatic;
+DEVELOPMENT_TEAM = 2NS7DA7UNP;  // Verify this matches your Apple Developer account
+PRODUCT_BUNDLE_IDENTIFIER = "io.github.getantonio.MindSet-Mastery";
+IPHONEOS_DEPLOYMENT_TARGET = 15.6;  // Make sure this matches or is lower than your device iOS version 
+
+buildSettings = {
+    // ... other settings ...
+    INFOPLIST_KEY_NSMicrophoneUsageDescription = "We need microphone access to record your affirmations";
+    INFOPLIST_KEY_NSMicrophoneUsageDescription_Privacy = "Record affirmations";
+    
+    // For iOS
+    "INFOPLIST_KEY_NSMicrophoneUsageDescription[sdk=iphoneos*]" = "We need microphone access to record your affirmations";
+    "INFOPLIST_KEY_NSMicrophoneUsageDescription[sdk=iphonesimulator*]" = "We need microphone access to record your affirmations";
+    
+    CODE_SIGN_ENTITLEMENTS = "MindSet Mastery/MindSet_Mastery.entitlements";
+    CODE_SIGN_STYLE = Automatic;
+    CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
+    DEVELOPMENT_TEAM = 2NS7DA7UNP;
+    
+    // Make sure these are in your Debug and Release configurations
+    ENABLE_HARDENED_RUNTIME = YES;
+    "ENABLE_HARDENED_RUNTIME[sdk=macosx*]" = YES;
+    
+    // iOS specific settings
+    "CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+    DEVELOPMENT_TEAM = 2NS7DA7UNP;
+    PROVISIONING_PROFILE_SPECIFIER = "";
+}; 

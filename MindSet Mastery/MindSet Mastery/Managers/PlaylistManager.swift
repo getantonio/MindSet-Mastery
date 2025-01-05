@@ -3,7 +3,7 @@ import CoreData
 
 class PlaylistManager {
     static let shared = PlaylistManager()
-    static let defaultPlaylistName = "My Recordings"
+    static let defaultPlaylistName = "All Recordings"
     
     private init() {}
     
@@ -47,5 +47,24 @@ class PlaylistManager {
             print("Error fetching default playlist: \(error)")
             return nil
         }
+    }
+    
+    func getOrCreateCategoryPlaylist(category: BehaviorCategory, context: NSManagedObjectContext) -> Playlist {
+        let request: NSFetchRequest<Playlist> = Playlist.fetchRequest()
+        request.predicate = NSPredicate(format: "name == %@", category.name)
+        request.fetchLimit = 1
+        
+        if let existingPlaylist = try? context.fetch(request).first {
+            return existingPlaylist
+        }
+        
+        let playlist = Playlist(context: context)
+        playlist.id = UUID()
+        playlist.name = category.name
+        playlist.createdAt = Date()
+        playlist.recordings = Set<Recording>()
+        
+        try? context.save()
+        return playlist
     }
 } 
