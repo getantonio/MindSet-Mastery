@@ -31,6 +31,7 @@ protocol AudioManaging: ObservableObject {
     func nextTrack()
     func previousTrack()
     func setCurrentPlaylist(_ playlist: Playlist?)
+    func discardRecording()
 }
 
 class AudioManager: NSObject, AudioManaging {
@@ -301,6 +302,16 @@ class AudioManager: NSObject, AudioManaging {
     
     func setCurrentPlaylist(_ playlist: Playlist?) {
         currentPlaylist = playlist
+    }
+    
+    func discardRecording() {
+        audioRecorder?.stop()
+        if let url = currentURL {
+            try? FileManager.default.removeItem(at: url)
+        }
+        currentURL = nil
+        isRecording = false
+        stopTimer()
     }
 }
 

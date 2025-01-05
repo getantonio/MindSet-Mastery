@@ -28,6 +28,9 @@ struct ContentView: View {
     @State private var currentAffirmationIndex = 0
     @State private var affirmationTimer: Timer?
     @State private var titleIndex = 0
+    @State private var titleOpacity = 1.0
+    @State private var previousTitle = ""
+    @State private var backgroundPulse = false
     
     var currentTitle: String {
         guard let category = selectedCategory else {
@@ -71,55 +74,116 @@ struct ContentView: View {
                 .padding(.top, 4)  // Reduced from 8
                 .padding(.bottom, 8)  // Reduced from 10
                 
-                // Recording Window
+                // Recording Window with pulsing background
                 ZStack {
+                    // Pure black background
                     Color.black
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.green.opacity(0.2))
+                        )
                     
-                    VStack(spacing: 20) {
-                        // Rotating Title
-                        Text(currentTitle)
-                            .font(.headline)
-                            .foregroundColor(.green)
-                            .frame(height: 40)
-                            .frame(maxWidth: .infinity)
-                            .multilineTextAlignment(.center)
-                            .shadow(color: .green.opacity(0.5), radius: 2)
-                        
-                        // Spinning wheels with different rotation directions
-                        HStack(spacing: 40) {
-                            // Left hypnotic wheel (counter-clockwise)
-                            HypnoticWheelView(isActive: isRecording, audioLevel: audioManager.audioLevel, rotateClockwise: false)
-                                .frame(width: 100, height: 100)
+                    GeometryReader { geometry in
+                        VStack(spacing: 0) {
+                            // Title section (top 30% of space)
+                            ZStack {
+                                // Previous Title
+                                Text(previousTitle)
+                                    .font(.headline)
+                                    .foregroundColor(.green)
+                                    .opacity(1 - titleOpacity)
+                                    .frame(maxWidth: .infinity)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.5)
+                                
+                                // Current Title
+                                Text(currentTitle)
+                                    .font(.headline)
+                                    .foregroundColor(.green)
+                                    .opacity(titleOpacity)
+                                    .frame(maxWidth: .infinity)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(2)
+                                    .minimumScaleFactor(0.5)
+                            }
+                            .padding(.horizontal)
+                            .scaleEffect(titleScale)
+                            .animation(
+                                Animation.easeInOut(duration: 2.5)
+                                    .repeatForever(autoreverses: true),
+                                value: isRecording
+                            )
+                            .frame(height: geometry.size.height * 0.3)
                             
-                            // Right hypnotic wheel (clockwise)
-                            HypnoticWheelView(isActive: isRecording, audioLevel: audioManager.audioLevel, rotateClockwise: true)
-                                .frame(width: 100, height: 100)
+                            Spacer()
+                            
+                            // Bottom section with wheels and controls
+                            VStack(spacing: 0) {  // Changed from 5 to 0
+                                // Spinning wheels
+                                HStack(spacing: 40) {
+                                    HypnoticWheelView(
+                                        isActive: selectedCategory != nil,
+                                        isRecording: isRecording,
+                                        audioLevel: audioManager.audioLevel,
+                                        rotateClockwise: false
+                                    )
+                                    .frame(width: 100, height: 100)
+                                    
+                                    HypnoticWheelView(
+                                        isActive: selectedCategory != nil,
+                                        isRecording: isRecording,
+                                        audioLevel: audioManager.audioLevel,
+                                        rotateClockwise: true
+                                    )
+                                    .frame(width: 100, height: 100)
+                                }
+                                .padding(.bottom, 5)  // Reduced from 10 to 5
+                                
+                                // Record controls
+                                VStack(spacing: 5) {
+                                    // Discard Button
+                                    Button(action: {
+                                        isRecording = false
+                                        audioManager.discardRecording()
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.system(.title2))
+                                            .foregroundColor(.red.opacity(0.8))
+                                    }
+                                    .opacity(isRecording ? 1 : 0)
+                                    .animation(.easeInOut, value: isRecording)
+                                    
+                                    // Record Button
+                                    Button(action: {
+                                        isRecording.toggle()
+                                        handleRecordingStateChanged(isRecording)
+                                    }) {
+                                        Text("REC")
+                                            .font(.system(.headline, design: .monospaced))
+                                            .foregroundColor(.white)
+                                            .padding(.horizontal, 20)
+                                            .padding(.vertical, 12)
+                                            .background(isRecording ? Color.red : Color.gray.opacity(0.3))
+                                            .cornerRadius(8)
+                                            .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
+                                    }
+                                    .disabled(selectedCategory == nil)
+                                }
+                                .frame(height: geometry.size.height * 0.25)
+                                .padding(.bottom, 15)  // Added fixed padding from bottom
+                            }
                         }
-                        
-                        // Record Button with glow
-                        Button(action: {
-                            isRecording.toggle()
-                            handleRecordingStateChanged(isRecording)
-                        }) {
-                            Text("REC")
-                                .font(.system(.headline, design: .monospaced))
-                                .foregroundColor(.white)
-                                .padding(.horizontal, 20)
-                                .padding(.vertical, 12)
-                                .background(isRecording ? Color.red : Color.gray.opacity(0.3))
-                                .cornerRadius(8)
-                                .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
-                        }
-                        .disabled(selectedCategory == nil)
+                        .padding()
                     }
-                    .padding()
                 }
                 .frame(height: 300)
                 .cornerRadius(12)
-                .shadow(color: .green.opacity(0.3), radius: 10)
+                .shadow(color: .green.opacity(0.2), radius: 10)
                 .padding(.horizontal)
-                .padding(.vertical, 10)  // Reduced padding
+                .padding(.vertical, 10)
                 .onAppear {
+                    backgroundPulse = true
                     startTitleRotation()
                 }
                 
@@ -202,11 +266,26 @@ struct ContentView: View {
         }
     }
     
+    private var titleScale: CGFloat {
+        let progress = sin(Date().timeIntervalSince1970)  // Smooth sine wave
+        let scale = 0.275  // Range from 0.7 to 1.25
+        return 0.975 + (progress * scale)  // Center point at 0.975
+    }
+    
     private func startTitleRotation() {
         affirmationTimer?.invalidate()
-        affirmationTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+        affirmationTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
             if selectedCategory != nil {
-                titleIndex = (titleIndex + 1) % 4
+                withAnimation(.easeInOut(duration: 1.0)) {
+                    previousTitle = currentTitle
+                    titleOpacity = 0
+                    titleIndex = (titleIndex + 1) % 4
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        withAnimation(.easeInOut(duration: 1.0)) {
+                            titleOpacity = 1
+                        }
+                    }
+                }
             }
         }
     }

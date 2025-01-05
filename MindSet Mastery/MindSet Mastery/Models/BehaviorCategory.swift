@@ -23,7 +23,6 @@ struct BehaviorCategory: Identifiable {
     )
     
     static let categories: [BehaviorCategory] = [
-        custom,
         BehaviorCategory(
             name: "Anxiety",
             icon: "heart.circle",
@@ -173,6 +172,7 @@ struct BehaviorCategory: Identifiable {
                 "Each day brings new blessings",
                 "My life is filled with abundance"
             ]
-        )
+        ),
+        custom
     ]
 } 

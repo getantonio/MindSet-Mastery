@@ -2,18 +2,27 @@ import SwiftUI
 
 struct HypnoticWheelView: View {
     let isActive: Bool
+    let isRecording: Bool
     let audioLevel: CGFloat
-    @State private var rotation = 0.0
     let rotateClockwise: Bool
+    @State private var rotation = 0.0
+    
+    var rotationDuration: Double {
+        if isRecording { return 1.8 }
+        if isActive { return 12.0 }
+        return 0
+    }
     
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Reduced glow on background circle
+                // Animated background circle
                 Circle()
                     .stroke(Color.green, lineWidth: 4)
                     .blur(radius: 0.5)
                     .shadow(color: .green.opacity(0.3), radius: 2)
+                    .scaleEffect(1.0 + (isActive ? audioLevel * 0.3 : 0))
+                    .animation(.easeInOut(duration: 0.2), value: audioLevel)
                 
                 // Hypnotic spiral with fewer spokes and simpler curves
                 ForEach(0..<4) { index in
@@ -26,11 +35,12 @@ struct HypnoticWheelView: View {
                     .shadow(color: .green.opacity(0.3), radius: 1)
                     .rotationEffect(.degrees(rotateClockwise ? rotation : -rotation))
                     .animation(
-                        isActive ?
-                            Animation.linear(duration: 2.2)
+                        rotationDuration > 0 ?
+                            Animation.linear(duration: rotationDuration)
                             .repeatForever(autoreverses: false) : .default,
                         value: rotation
                     )
+                    .clipShape(Circle().scale(1.0 + (isActive ? audioLevel * 0.3 : 0)))
                 }
                 
                 // Pulsing center with enhanced glow
@@ -47,21 +57,24 @@ struct HypnoticWheelView: View {
             }
             .frame(width: geometry.size.width, height: geometry.size.height)
             .onAppear {
-                if isActive {
-                    withAnimation(.linear(duration: 2.2).repeatForever(autoreverses: false)) {
-                        rotation = 360
-                    }
-                }
+                updateRotation()
             }
-            .onChange(of: isActive) { newValue in
-                if newValue {
-                    withAnimation(.linear(duration: 2.2).repeatForever(autoreverses: false)) {
-                        rotation = 360
-                    }
-                } else {
-                    rotation = 0
-                }
+            .onChange(of: isActive) { _ in
+                updateRotation()
             }
+            .onChange(of: isRecording) { _ in
+                updateRotation()
+            }
+        }
+    }
+    
+    private func updateRotation() {
+        if rotationDuration > 0 {
+            withAnimation(.linear(duration: rotationDuration).repeatForever(autoreverses: false)) {
+                rotation = 360
+            }
+        } else {
+            rotation = 0
         }
     }
 }
@@ -100,7 +113,7 @@ struct HypnoticSpiral: Shape {
 #Preview {
     ZStack {
         Color.black
-        HypnoticWheelView(isActive: true, audioLevel: 0.5, rotateClockwise: true)
+        HypnoticWheelView(isActive: true, isRecording: false, audioLevel: 0.5, rotateClockwise: true)
             .frame(width: 200, height: 200)
     }
 } 
