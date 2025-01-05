@@ -9,25 +9,25 @@ struct HypnoticWheelView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                // Thicker background circle with glow
+                // Reduced glow on background circle
                 Circle()
                     .stroke(Color.green, lineWidth: 4)
-                    .blur(radius: 1)
-                    .shadow(color: .green.opacity(0.5), radius: 4)
+                    .blur(radius: 0.5)
+                    .shadow(color: .green.opacity(0.3), radius: 2)
                 
-                // Hypnotic spiral
-                ForEach(0..<8) { index in
+                // Hypnotic spiral with fewer spokes and simpler curves
+                ForEach(0..<4) { index in
                     HypnoticSpiral(
-                        spokes: 8,
+                        spokes: 4,
                         index: index,
                         audioLevel: audioLevel
                     )
                     .stroke(Color.green, lineWidth: 2)
-                    .shadow(color: .green.opacity(0.5), radius: 2)
+                    .shadow(color: .green.opacity(0.3), radius: 1)
                     .rotationEffect(.degrees(rotateClockwise ? rotation : -rotation))
                     .animation(
                         isActive ?
-                            Animation.linear(duration: 4)
+                            Animation.linear(duration: 2.2)
                             .repeatForever(autoreverses: false) : .default,
                         value: rotation
                     )
@@ -48,14 +48,14 @@ struct HypnoticWheelView: View {
             .frame(width: geometry.size.width, height: geometry.size.height)
             .onAppear {
                 if isActive {
-                    withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                    withAnimation(.linear(duration: 2.2).repeatForever(autoreverses: false)) {
                         rotation = 360
                     }
                 }
             }
             .onChange(of: isActive) { newValue in
                 if newValue {
-                    withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                    withAnimation(.linear(duration: 2.2).repeatForever(autoreverses: false)) {
                         rotation = 360
                     }
                 } else {

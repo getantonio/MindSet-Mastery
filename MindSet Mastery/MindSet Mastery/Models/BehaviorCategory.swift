@@ -1,13 +1,29 @@
 import Foundation
 
-struct BehaviorCategory: Identifiable, Hashable {
+struct BehaviorCategory: Identifiable {
     let id = UUID()
     let name: String
     let icon: String
     let description: String
     let defaultAffirmations: [String]
+    let isCustom: Bool
+    
+    init(name: String, icon: String = "", description: String = "", defaultAffirmations: [String], isCustom: Bool = false) {
+        self.name = name
+        self.icon = icon
+        self.description = description
+        self.defaultAffirmations = defaultAffirmations
+        self.isCustom = isCustom
+    }
+    
+    static let custom = BehaviorCategory(
+        name: "Custom",
+        defaultAffirmations: CustomAffirmation.defaultAffirmations,
+        isCustom: true
+    )
     
     static let categories: [BehaviorCategory] = [
+        custom,
         BehaviorCategory(
             name: "Anxiety",
             icon: "heart.circle",

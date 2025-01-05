@@ -50,10 +50,9 @@ struct ContentView: View {
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Darker background
-            Color(white: 0.1).edgesIgnoringSafeArea(.all)  // Very dark gray
+            Color(white: 0.1).edgesIgnoringSafeArea(.all)
             
-            VStack(spacing: 10) {  // Reduced spacing between sections
+            VStack(spacing: 8) {  // Reduced from 10 to 8
                 // Title Box
                 VStack(spacing: 8) {
                     Text("Transform Your Mindset")
@@ -63,14 +62,14 @@ struct ContentView: View {
                         .font(.subheadline)
                         .foregroundColor(.gray)
                 }
-                .padding()
+                .padding(.vertical, 8)  // Reduced padding
                 .frame(maxWidth: 500)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(white: 0.15))  // Slightly lighter than background
+                        .fill(Color(white: 0.15))
                 )
-                .padding(.top, 8)
-                .padding(.bottom, 10)  // Reduced padding
+                .padding(.top, 4)  // Reduced from 8
+                .padding(.bottom, 8)  // Reduced from 10
                 
                 // Recording Window
                 ZStack {
@@ -130,7 +129,9 @@ struct ContentView: View {
                         Button(category.name) {
                             selectedCategory = category
                             titleIndex = 0
-                            affirmationsVM.refreshAffirmations(for: category)
+                            if !category.isCustom {
+                                affirmationsVM.refreshAffirmations(for: category)
+                            }
                         }
                     }
                 } label: {
@@ -147,22 +148,32 @@ struct ContentView: View {
                     .cornerRadius(8)
                 }
                 
-                // Affirmations List
+                // Affirmations Section
                 if let category = selectedCategory {
-                    ScrollView {
-                        VStack(spacing: 10) {  // Reduced spacing
-                            ForEach(category.defaultAffirmations, id: \.self) { affirmation in
-                                Text(affirmation)
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color(white: 0.15))  // Slightly lighter than background
-                                    .cornerRadius(8)
-                            }
+                    if category.isCustom {
+                        // Custom Affirmation Workshop
+                        VStack(spacing: 10) {
+                            AffirmationBuilderView()
+                                .frame(maxHeight: 200)
                         }
                         .padding(.horizontal)
+                    } else {
+                        // Regular Affirmations List
+                        ScrollView {
+                            VStack(spacing: 10) {
+                                ForEach(category.defaultAffirmations, id: \.self) { affirmation in
+                                    Text(affirmation)
+                                        .foregroundColor(.white)
+                                        .padding()
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(Color(white: 0.15))
+                                        .cornerRadius(8)
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                        .frame(maxHeight: 200)
                     }
-                    .frame(maxHeight: 200)
                 }
                 
                 Spacer()
@@ -171,17 +182,17 @@ struct ContentView: View {
                 Button(action: { showPlaylist = true }) {
                     HStack {
                         Image(systemName: "music.note.list")
-                        Text("My Playlists")
+                        Text("Playlist")  // Changed from "My Playlists"
                     }
                     .foregroundColor(.green)
                     .padding()
-                    .background(Color(white: 0.15))  // Slightly lighter than background
+                    .background(Color(white: 0.15))
                     .cornerRadius(8)
                 }
-                .padding(.bottom, 10)  // Reduced padding
+                .padding(.bottom, 8)
             }
             .padding(.horizontal)
-            .padding(.vertical, 10)  // Reduced padding
+            .padding(.vertical, 8)
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showPlaylist) {

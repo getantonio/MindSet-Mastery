@@ -7,6 +7,8 @@ struct PlaylistManagerView: View {
     @EnvironmentObject private var audioPlayerVM: AudioPlayerViewModel
     @State private var showNewPlaylistSheet = false
     @State private var expandedPlaylists = Set<UUID>()
+    @State private var editingPlaylist: Playlist?
+    @State private var newName = ""
     
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \Playlist.createdAt, ascending: false)]
@@ -49,6 +51,15 @@ struct PlaylistManagerView: View {
                                 Text("\(playlist.recordings?.count ?? 0) recordings")
                                     .foregroundColor(.secondary)
                                     .font(.caption)
+                                if playlist.name != PlaylistManager.defaultPlaylistName {
+                                    Button {
+                                        editingPlaylist = playlist
+                                        newName = playlist.name ?? ""
+                                    } label: {
+                                        Image(systemName: "pencil")
+                                            .foregroundColor(.green)
+                                    }
+                                }
                             }
                             .contentShape(Rectangle())
                             .onTapGesture {
@@ -88,6 +99,22 @@ struct PlaylistManagerView: View {
                 PlaybackControlBar()
                     .environmentObject(audioPlayerVM)
                     .background(.ultraThinMaterial)
+            }
+            .alert("Rename Playlist", isPresented: Binding(
+                get: { editingPlaylist != nil },
+                set: { if !$0 { editingPlaylist = nil } }
+            )) {
+                TextField("Playlist Name", text: $newName)
+                Button("Cancel") {
+                    editingPlaylist = nil
+                }
+                Button("Save") {
+                    if let playlist = editingPlaylist {
+                        playlist.name = newName
+                        try? viewContext.save()
+                    }
+                    editingPlaylist = nil
+                }
             }
         }
         .sheet(isPresented: $showNewPlaylistSheet) {

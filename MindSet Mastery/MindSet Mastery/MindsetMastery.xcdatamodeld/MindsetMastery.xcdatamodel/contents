@@ -15,4 +15,9 @@
         <attribute name="name" attributeType="String" defaultValueString="New Playlist"/>
         <relationship name="recordings" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="Recording" inverseName="playlist" inverseEntity="Recording"/>
     </entity>
+    <entity name="CustomAffirmation" representedClassName="CustomAffirmation">
+        <attribute name="createdAt" optional="YES" attributeType="Date"/>
+        <attribute name="id" optional="YES" attributeType="UUID" defaultValueString="00000000-0000-0000-0000-000000000000"/>
+        <attribute name="text" attributeType="String" defaultValueString="New Affirmation"/>
+    </entity>
 </model> 
