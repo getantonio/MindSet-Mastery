@@ -24,13 +24,36 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @State private var showMicrophoneAlert = false
     @State private var rotationAngle = 0.0
+    @StateObject private var audioPlayerVM = AudioPlayerViewModel.shared
+    @State private var currentAffirmationIndex = 0
+    @State private var affirmationTimer: Timer?
+    @State private var titleIndex = 0
+    
+    var currentTitle: String {
+        guard let category = selectedCategory else {
+            return "SELECT CATEGORY"
+        }
+        
+        switch titleIndex {
+        case 0:
+            return category.name
+        case 1:
+            return category.defaultAffirmations[0]
+        case 2:
+            return category.defaultAffirmations[1]
+        case 3:
+            return category.defaultAffirmations[2]
+        default:
+            return category.name
+        }
+    }
     
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Background
-            Color.black.edgesIgnoringSafeArea(.all)
+            // Darker background
+            Color(white: 0.1).edgesIgnoringSafeArea(.all)  // Very dark gray
             
-            VStack(spacing: 16) {
+            VStack(spacing: 10) {  // Reduced spacing between sections
                 // Title Box
                 VStack(spacing: 8) {
                     Text("Transform Your Mindset")
@@ -44,69 +67,69 @@ struct ContentView: View {
                 .frame(maxWidth: 500)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(.darkGray).opacity(0.3))
+                        .fill(Color(white: 0.15))  // Slightly lighter than background
                 )
                 .padding(.top, 8)
-                .padding(.bottom, 16)
+                .padding(.bottom, 10)  // Reduced padding
                 
-                // Category Selection
-                Text("SELECT CATEGORY")
-                    .font(.headline)
-                    .foregroundColor(.green)
-                    .padding(.top, 20)
-                
-                // Recorder Section with spinning circles
-                VStack(spacing: 30) {
-                    HStack(spacing: 40) {
-                        Circle()
-                            .stroke(Color.green, lineWidth: 2)
-                            .frame(width: 100, height: 100)
-                            .rotationEffect(.degrees(isRecording ? 360 : 0))
-                            .animation(
-                                isRecording ? 
-                                    Animation.linear(duration: 3.0).repeatForever(autoreverses: false) : 
-                                    .default,
-                                value: isRecording
-                            )
-                        Circle()
-                            .stroke(Color.green, lineWidth: 2)
-                            .frame(width: 100, height: 100)
-                            .rotationEffect(.degrees(isRecording ? -360 : 0))
-                            .animation(
-                                isRecording ? 
-                                    Animation.linear(duration: 3.0).repeatForever(autoreverses: false) : 
-                                    .default,
-                                value: isRecording
-                            )
-                    }
+                // Recording Window
+                ZStack {
+                    Color.black
                     
-                    // Record Button
-                    Button(action: {
-                        isRecording.toggle()
-                        handleRecordingStateChanged(isRecording)
-                    }) {
-                        Text("REC")
-                            .font(.system(.headline, design: .monospaced))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(isRecording ? Color.red : Color.gray.opacity(0.3))
-                            .cornerRadius(8)
+                    VStack(spacing: 20) {
+                        // Rotating Title
+                        Text(currentTitle)
+                            .font(.headline)
+                            .foregroundColor(.green)
+                            .frame(height: 40)
+                            .frame(maxWidth: .infinity)
+                            .multilineTextAlignment(.center)
+                            .shadow(color: .green.opacity(0.5), radius: 2)
+                        
+                        // Spinning wheels with different rotation directions
+                        HStack(spacing: 40) {
+                            // Left hypnotic wheel (counter-clockwise)
+                            HypnoticWheelView(isActive: isRecording, audioLevel: audioManager.audioLevel, rotateClockwise: false)
+                                .frame(width: 100, height: 100)
+                            
+                            // Right hypnotic wheel (clockwise)
+                            HypnoticWheelView(isActive: isRecording, audioLevel: audioManager.audioLevel, rotateClockwise: true)
+                                .frame(width: 100, height: 100)
+                        }
+                        
+                        // Record Button with glow
+                        Button(action: {
+                            isRecording.toggle()
+                            handleRecordingStateChanged(isRecording)
+                        }) {
+                            Text("REC")
+                                .font(.system(.headline, design: .monospaced))
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(isRecording ? Color.red : Color.gray.opacity(0.3))
+                                .cornerRadius(8)
+                                .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
+                        }
+                        .disabled(selectedCategory == nil)
                     }
-                    .disabled(selectedCategory == nil)
+                    .padding()
                 }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.black)
-                        .shadow(color: .green.opacity(0.3), radius: 5)
-                )
+                .frame(height: 300)
+                .cornerRadius(12)
+                .shadow(color: .green.opacity(0.3), radius: 10)
+                .padding(.horizontal)
+                .padding(.vertical, 10)  // Reduced padding
+                .onAppear {
+                    startTitleRotation()
+                }
                 
                 // Category Selection Menu
                 Menu {
                     ForEach(BehaviorCategory.categories) { category in
                         Button(category.name) {
                             selectedCategory = category
+                            titleIndex = 0
                             affirmationsVM.refreshAffirmations(for: category)
                         }
                     }
@@ -120,28 +143,31 @@ struct ContentView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .frame(width: menuWidth)
-                    .background(Color.gray.opacity(0.2))
+                    .background(Color(white: 0.15))  // Slightly lighter than background
                     .cornerRadius(8)
                 }
                 
                 // Affirmations List
                 if let category = selectedCategory {
                     ScrollView {
-                        VStack(spacing: 12) {
+                        VStack(spacing: 10) {  // Reduced spacing
                             ForEach(category.defaultAffirmations, id: \.self) { affirmation in
                                 Text(affirmation)
                                     .foregroundColor(.white)
                                     .padding()
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color.gray.opacity(0.2))
+                                    .background(Color(white: 0.15))  // Slightly lighter than background
                                     .cornerRadius(8)
                             }
                         }
-                        .padding()
+                        .padding(.horizontal)
                     }
                     .frame(maxHeight: 200)
                 }
                 
+                Spacer()
+                
+                // Playlist Button
                 Button(action: { showPlaylist = true }) {
                     HStack {
                         Image(systemName: "music.note.list")
@@ -149,22 +175,27 @@ struct ContentView: View {
                     }
                     .foregroundColor(.green)
                     .padding()
-                    .background(Color.gray.opacity(0.2))
+                    .background(Color(white: 0.15))  // Slightly lighter than background
                     .cornerRadius(8)
                 }
-                
-                Spacer()
+                .padding(.bottom, 10)  // Reduced padding
             }
-            .padding()
-            
-            // Global Playback Control Bar
-            PlaybackControlBar()
+            .padding(.horizontal)
+            .padding(.vertical, 10)  // Reduced padding
         }
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showPlaylist) {
-            NavigationView {
-                PlaylistManagerView()
-                    .environment(\.managedObjectContext, viewContext)
+            PlaylistManagerView()
+                .environment(\.managedObjectContext, viewContext)
+                .environmentObject(audioPlayerVM)
+        }
+    }
+    
+    private func startTitleRotation() {
+        affirmationTimer?.invalidate()
+        affirmationTimer = Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { _ in
+            if selectedCategory != nil {
+                titleIndex = (titleIndex + 1) % 4
             }
         }
     }

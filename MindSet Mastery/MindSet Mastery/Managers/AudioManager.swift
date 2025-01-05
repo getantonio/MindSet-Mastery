@@ -30,6 +30,7 @@ protocol AudioManaging: ObservableObject {
     func setVolume(_ volume: Double)
     func nextTrack()
     func previousTrack()
+    func setCurrentPlaylist(_ playlist: Playlist?)
 }
 
 class AudioManager: NSObject, AudioManaging {
@@ -49,28 +50,15 @@ class AudioManager: NSObject, AudioManaging {
     
     override init() {
         super.init()
-        setupVolumeControl()
+        setupAudioSession()
     }
     
-    private func setupVolumeControl() {
+    private func setupAudioSession() {
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default, options: [.mixWithOthers])
             try AVAudioSession.sharedInstance().setActive(true)
-            
-            #if os(iOS)
-            // Set up system volume control
-            let volumeView = MPVolumeView(frame: CGRect(x: -100, y: -100, width: 0, height: 0))
-            
-            // Use AVRoutePickerView for modern route selection
-            if #available(iOS 13.0, *) {
-                let routePicker = AVRoutePickerView(frame: CGRect.zero)
-                routePicker.isHidden = true  // Hide but keep functional
-            } else {
-                volumeView.showsRouteButton = false
-            }
-            #endif
         } catch {
-            print("Error setting up audio session: \(error)")
+            print("Failed to set up audio session: \(error)")
         }
     }
     
@@ -79,33 +67,47 @@ class AudioManager: NSObject, AudioManaging {
     }
     
     func nextTrack() {
-        guard let currentPlaylist = currentPlaylist,
-              let recordings = currentPlaylist.recordings else {
-            return
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard let currentPlaylist = self.currentPlaylist,
+                  let recordings = currentPlaylist.recordings else {
+                self.stopPlayback()
+                return
+            }
+            
+            let recordingsArray = Array(recordings).sorted { $0.createdAt ?? Date() < $1.createdAt ?? Date() }
+            guard let currentIndex = recordingsArray.firstIndex(where: { $0.id == self.currentRecording?.id }) else {
+                if let firstRecording = recordingsArray.first {
+                    self.startPlayback(recording: firstRecording)
+                }
+                return
+            }
+            
+            let nextIndex = (currentIndex + 1) % recordingsArray.count
+            self.startPlayback(recording: recordingsArray[nextIndex])
         }
-        
-        let recordingsArray = Array(recordings).sorted { $0.createdAt ?? Date() < $1.createdAt ?? Date() }
-        guard let currentIndex = recordingsArray.firstIndex(where: { $0.id == currentRecording?.id }) else {
-            return
-        }
-        
-        let nextIndex = (currentIndex + 1) % recordingsArray.count
-        startPlayback(recording: recordingsArray[nextIndex])
     }
     
     func previousTrack() {
-        guard let currentPlaylist = currentPlaylist,
-              let recordings = currentPlaylist.recordings else {
-            return
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard let currentPlaylist = self.currentPlaylist,
+                  let recordings = currentPlaylist.recordings else {
+                self.stopPlayback()
+                return
+            }
+            
+            let recordingsArray = Array(recordings).sorted { $0.createdAt ?? Date() < $1.createdAt ?? Date() }
+            guard let currentIndex = recordingsArray.firstIndex(where: { $0.id == self.currentRecording?.id }) else {
+                if let lastRecording = recordingsArray.last {
+                    self.startPlayback(recording: lastRecording)
+                }
+                return
+            }
+            
+            let previousIndex = (currentIndex - 1 + recordingsArray.count) % recordingsArray.count
+            self.startPlayback(recording: recordingsArray[previousIndex])
         }
-        
-        let recordingsArray = Array(recordings).sorted { $0.createdAt ?? Date() < $1.createdAt ?? Date() }
-        guard let currentIndex = recordingsArray.firstIndex(where: { $0.id == currentRecording?.id }) else {
-            return
-        }
-        
-        let previousIndex = (currentIndex - 1 + recordingsArray.count) % recordingsArray.count
-        startPlayback(recording: recordingsArray[previousIndex])
     }
     
     private func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
@@ -203,45 +205,73 @@ class AudioManager: NSObject, AudioManaging {
     }
     
     func startPlayback(recording: Recording) {
-        guard let filePath = recording.filePath else { return }
-        let url = URL(fileURLWithPath: filePath)
-        
-        do {
-            audioPlayer = try AVAudioPlayer(contentsOf: url)
-            audioPlayer?.delegate = self
-            audioPlayer?.prepareToPlay()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            guard let filePath = recording.filePath else { return }
             
-            if audioPlayer?.play() == true {
-                currentRecording = recording
-                currentPlaylist = recording.playlist
-                isPlaying = true
-                duration = audioPlayer?.duration ?? 0
-                startTimer()
+            // Ensure audio session is active
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+            } catch {
+                print("Failed to activate audio session: \(error)")
+                return
             }
-        } catch {
-            print("Error starting playback: \(error)")
+            
+            let url = URL(fileURLWithPath: filePath)
+            
+            do {
+                self.audioPlayer = try AVAudioPlayer(contentsOf: url)
+                self.audioPlayer?.delegate = self
+                self.audioPlayer?.prepareToPlay()
+                
+                if self.audioPlayer?.play() == true {
+                    self.currentRecording = recording
+                    if self.currentPlaylist == nil {
+                        self.currentPlaylist = recording.playlist
+                    }
+                    self.isPlaying = true
+                    self.duration = self.audioPlayer?.duration ?? 0
+                    self.startTimer()
+                }
+            } catch {
+                print("Error starting playback: \(error)")
+                self.nextTrack()
+            }
         }
     }
     
     func pausePlayback() {
-        audioPlayer?.pause()
-        isPlaying = false
-        stopTimer()
+        DispatchQueue.main.async { [weak self] in
+            self?.audioPlayer?.pause()
+            self?.isPlaying = false
+            self?.stopTimer()
+        }
     }
     
     func resumePlayback() {
-        audioPlayer?.play()
-        isPlaying = true
-        startTimer()
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            
+            do {
+                try AVAudioSession.sharedInstance().setActive(true)
+                self.audioPlayer?.play()
+                self.isPlaying = true
+                self.startTimer()
+            } catch {
+                print("Failed to resume playback: \(error)")
+            }
+        }
     }
     
     func stopPlayback() {
-        audioPlayer?.stop()
-        audioPlayer = nil
-        isPlaying = false
-        currentRecording = nil
-        stopTimer()
-        currentTime = 0
+        DispatchQueue.main.async { [weak self] in
+            self?.audioPlayer?.stop()
+            self?.audioPlayer = nil
+            self?.isPlaying = false
+            self?.currentRecording = nil
+            self?.stopTimer()
+            self?.currentTime = 0
+        }
     }
     
     func seek(to time: TimeInterval) {
@@ -253,6 +283,10 @@ class AudioManager: NSObject, AudioManaging {
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self = self else { return }
             if self.isRecording {
+                self.audioRecorder?.updateMeters()
+                let level = self.audioRecorder?.averagePower(forChannel: 0) ?? -160
+                let normalizedLevel = pow(10, level/20)
+                self.audioLevel = CGFloat(normalizedLevel)
                 self.currentTime = self.audioRecorder?.currentTime ?? 0
             } else if self.isPlaying {
                 self.currentTime = self.audioPlayer?.currentTime ?? 0
@@ -263,6 +297,10 @@ class AudioManager: NSObject, AudioManaging {
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+    }
+    
+    func setCurrentPlaylist(_ playlist: Playlist?) {
+        currentPlaylist = playlist
     }
 }
 
@@ -275,9 +313,15 @@ extension AudioManager: AVAudioRecorderDelegate {
 
 extension AudioManager: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-        isPlaying = false
-        currentRecording = nil
-        stopTimer()
-        currentTime = 0
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+            if self.isLooping {
+                if let currentRecording = self.currentRecording {
+                    self.startPlayback(recording: currentRecording)
+                }
+            } else {
+                self.nextTrack()
+            }
+        }
     }
 } 

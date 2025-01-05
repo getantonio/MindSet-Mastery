@@ -2,14 +2,14 @@ import SwiftUI
 import MediaPlayer
 
 struct PlaybackControlBar: View {
-    @StateObject private var audioManager = AudioManager()
+    @EnvironmentObject private var audioPlayerVM: AudioPlayerViewModel
     @State private var volume: Double = 0.5
     @State private var isShowingPlaylist = false
     
     var body: some View {
         VStack(spacing: 0) {
             // Current Playing Info
-            if let recording = audioManager.currentRecording {
+            if let recording = audioPlayerVM.audioManager.currentRecording {
                 HStack {
                     VStack(alignment: .leading) {
                         Text(recording.wrappedTitle)
@@ -30,7 +30,7 @@ struct PlaybackControlBar: View {
             }
             
             // Progress Bar
-            ProgressView(value: audioManager.currentTime, total: audioManager.duration)
+            ProgressView(value: audioPlayerVM.audioManager.currentTime, total: audioPlayerVM.audioManager.duration)
                 .tint(.green)
                 .padding(.horizontal)
             
@@ -40,38 +40,38 @@ struct PlaybackControlBar: View {
                 HStack {
                     Image(systemName: "speaker.fill")
                     Slider(value: $volume, in: 0...1) { _ in
-                        audioManager.setVolume(volume)
+                        audioPlayerVM.audioManager.setVolume(volume)
                     }
                     Image(systemName: "speaker.wave.3.fill")
                 }
                 .frame(width: 120)
                 
                 // Playback Controls
-                Button(action: audioManager.previousTrack) {
+                Button(action: audioPlayerVM.audioManager.previousTrack) {
                     Image(systemName: "backward.fill")
                         .font(.title2)
                 }
                 
                 Button(action: {
-                    if audioManager.isPlaying {
-                        audioManager.pausePlayback()
+                    if audioPlayerVM.audioManager.isPlaying {
+                        audioPlayerVM.audioManager.pausePlayback()
                     } else {
-                        audioManager.resumePlayback()
+                        audioPlayerVM.audioManager.resumePlayback()
                     }
                 }) {
-                    Image(systemName: audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
+                    Image(systemName: audioPlayerVM.audioManager.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.title)
                 }
                 
-                Button(action: audioManager.nextTrack) {
+                Button(action: audioPlayerVM.audioManager.nextTrack) {
                     Image(systemName: "forward.fill")
                         .font(.title2)
                 }
                 
                 // Loop Button
-                Button(action: { audioManager.isLooping.toggle() }) {
-                    Image(systemName: audioManager.isLooping ? "repeat.1" : "repeat")
-                        .foregroundColor(audioManager.isLooping ? .green : .primary)
+                Button(action: { audioPlayerVM.audioManager.isLooping.toggle() }) {
+                    Image(systemName: audioPlayerVM.audioManager.isLooping ? "repeat.1" : "repeat")
+                        .foregroundColor(audioPlayerVM.audioManager.isLooping ? .green : .primary)
                 }
             }
             .padding()
@@ -79,10 +79,12 @@ struct PlaybackControlBar: View {
         .background(.ultraThinMaterial)
         .sheet(isPresented: $isShowingPlaylist) {
             NavigationView {
-                if let playlist = audioManager.currentPlaylist {
+                if let playlist = audioPlayerVM.audioManager.currentPlaylist {
                     PlaylistDetailView(playlist: playlist)
+                        .environmentObject(audioPlayerVM)
                 }
             }
+            .interactiveDismissDisabled(false)
         }
     }
 } 

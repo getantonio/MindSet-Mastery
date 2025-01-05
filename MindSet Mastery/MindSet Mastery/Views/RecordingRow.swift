@@ -3,7 +3,7 @@ import CoreData
 
 struct RecordingRow: View {
     let recording: Recording
-    @StateObject private var audioManager = AudioManager()
+    @EnvironmentObject private var audioPlayerVM: AudioPlayerViewModel
     @Environment(\.managedObjectContext) private var viewContext
     
     @FetchRequest(
@@ -21,7 +21,8 @@ struct RecordingRow: View {
         .padding(.vertical, 4)
         .contentShape(Rectangle())
         .onTapGesture {
-            audioManager.startPlayback(recording: recording)
+            audioPlayerVM.audioManager.setCurrentPlaylist(recording.playlist)
+            audioPlayerVM.audioManager.startPlayback(recording: recording)
         }
         .contextMenu {
             Menu("Move to Playlist") {
