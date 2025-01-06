@@ -138,7 +138,8 @@ struct ContentView: View {
                                     )
                                     .frame(width: 100, height: 100)
                                 }
-                                .padding(.bottom, 5)  // Reduced from 10 to 5
+                                .padding(.bottom, 5)
+                                .padding(.leading, 33)
                                 
                                 // Record controls
                                 VStack(spacing: 5) {

@@ -6,14 +6,9 @@ struct HypnoticWheelView: View {
     let audioLevel: CGFloat
     let rotateClockwise: Bool
     
-    @State private var rotation = 0.0
-    @State private var position = CGPoint(x: 0, y: 0)
-    @State private var velocity = CGPoint(x: 0, y: 0)
-    @State private var timer: Timer?
-    
     var rotationDuration: Double {
-        if isRecording { return 1.8 }
-        if isActive { return 12.0 }
+        if isRecording { return 2.0 }     // Even slower for smoother motion
+        if isActive { return 8.0 }        // Very slow base rotation
         return 0
     }
     
@@ -27,16 +22,16 @@ struct HypnoticWheelView: View {
             let wheelSize = min(size.width, size.height) * 0.7
             
             ZStack {
-                // Animated background circle with increased sensitivity
+                // Background circle
                 Circle()
                     .stroke(Color.green, lineWidth: 4)
                     .blur(radius: 0.5)
                     .shadow(color: .green.opacity(0.3), radius: 2)
                     .frame(width: wheelSize, height: wheelSize)
                     .scaleEffect(1.0 + (isActive ? amplifiedAudioLevel * 0.5 : 0))
-                    .animation(.easeInOut(duration: 0.1), value: audioLevel) // Faster response
+                    .animation(.easeInOut(duration: 0.1), value: audioLevel)
                 
-                // Hypnotic spiral with increased audio response
+                // Hypnotic spiral
                 ForEach(0..<4) { index in
                     HypnoticSpiral(
                         spokes: 4,
@@ -46,102 +41,21 @@ struct HypnoticWheelView: View {
                     .stroke(Color.green, lineWidth: 2)
                     .shadow(color: .green.opacity(0.3), radius: 1)
                     .frame(width: wheelSize, height: wheelSize)
-                    .rotationEffect(.degrees(rotateClockwise ? rotation : -rotation))
-                    .animation(
-                        rotationDuration > 0 ?
-                            Animation.linear(duration: rotationDuration)
-                            .repeatForever(autoreverses: false) : .default,
-                        value: rotation
-                    )
-                    .clipShape(Circle().scale(1.0 + (isActive ? amplifiedAudioLevel * 0.5 : 0)))
+                    .modifier(SpinningModifier(
+                        isActive: isActive,
+                        isRecording: isRecording,
+                        clockwise: rotateClockwise
+                    ))
                 }
+                .clipShape(Circle())
                 
-                // More responsive center pulse
+                // Center pulse
                 Circle()
                     .fill(Color.green)
                     .frame(width: 8, height: 8)
                     .blur(radius: 2)
                     .shadow(color: .green.opacity(0.8), radius: 4)
                     .scaleEffect(isActive ? 1.0 + amplifiedAudioLevel : 1.0)
-            }
-            .offset(x: position.x, y: position.y)
-            .onAppear {
-                startMovement()
-                updateRotation()
-            }
-            .onChange(of: isRecording) { newValue in
-                if newValue {
-                    // Start movement when recording begins
-                    startMovement()
-                } else {
-                    // Return to center when recording stops
-                    withAnimation(.spring()) {
-                        position = .zero
-                        velocity = .zero
-                    }
-                }
-            }
-            .onDisappear {
-                timer?.invalidate()
-            }
-        }
-    }
-    
-    private func updateRotation() {
-        if rotationDuration > 0 {
-            withAnimation(.linear(duration: rotationDuration).repeatForever(autoreverses: false)) {
-                rotation = 360
-            }
-        } else {
-            rotation = 0
-        }
-    }
-    
-    private func startMovement() {
-        timer?.invalidate()
-        
-        // Ensure we start with movement
-        velocity = CGPoint(
-            x: CGFloat.random(in: -3...3),
-            y: CGFloat.random(in: -3...3)
-        )
-        
-        timer = Timer.scheduledTimer(withTimeInterval: 0.016, repeats: true) { _ in
-            guard isRecording else { return }
-            
-            // Add random force
-            velocity.x += CGFloat.random(in: -0.8...0.8)
-            velocity.y += CGFloat.random(in: -0.8...0.8)
-            
-            // Update position
-            position.x += velocity.x
-            position.y += velocity.y
-            
-            // Bounce off boundaries
-            let maxX: CGFloat = 50
-            let maxY: CGFloat = 25
-            
-            if abs(position.x) > maxX {
-                position.x = position.x > 0 ? maxX : -maxX
-                velocity.x = -velocity.x * 0.8
-            }
-            
-            if abs(position.y) > maxY {
-                position.y = position.y > 0 ? maxY : -maxY
-                velocity.y = -velocity.y * 0.8
-            }
-            
-            // Apply drag
-            velocity.x *= 0.98
-            velocity.y *= 0.98
-            
-            // Ensure minimum movement
-            let minSpeed: CGFloat = 0.5
-            if sqrt(velocity.x * velocity.x + velocity.y * velocity.y) < minSpeed {
-                velocity = CGPoint(
-                    x: CGFloat.random(in: -2...2),
-                    y: CGFloat.random(in: -2...2)
-                )
             }
         }
     }
@@ -175,6 +89,43 @@ struct HypnoticSpiral: Shape {
         }
         
         return path
+    }
+}
+
+// Custom modifier for continuous spinning
+struct SpinningModifier: ViewModifier {
+    let isActive: Bool
+    let isRecording: Bool
+    let clockwise: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(clockwise ? 1 : -1))
+            .modifier(TimelineModifier(
+                duration: isRecording ? 2.0 : 8.0,
+                isActive: isActive
+            ))
+    }
+}
+
+// Timeline modifier for smooth continuous animation
+struct TimelineModifier: ViewModifier {
+    let duration: Double
+    let isActive: Bool
+    
+    @State private var angle = 0.0
+    
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(angle))
+            .onAppear {
+                withAnimation(
+                    .linear(duration: duration)
+                    .repeatForever(autoreverses: false)
+                ) {
+                    angle = 360
+                }
+            }
     }
 }
 
