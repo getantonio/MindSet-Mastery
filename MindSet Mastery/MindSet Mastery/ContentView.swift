@@ -416,6 +416,7 @@ struct ContentView: View {
             }, isActive: themeManager.activeColor == .blue)
         }
         .padding(.horizontal)
+        .padding(.bottom, 4)  // Reduced bottom padding
     }
     
     private func saveRecording(url: URL, category: BehaviorCategory) {
@@ -532,46 +533,9 @@ struct AffirmationCard: View {
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
     }
-}
-
-struct ColorThemeButton: View {
-    let color: Color
-    let action: () -> Void
-    let isActive: Bool
     
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Outer glow
-                Circle()
-                    .fill(color)
-                    .opacity(isActive ? 0.3 : 0.0)
-                    .frame(width: 32, height: 32)
-                    .blur(radius: 8)
-                
-                // LED light
-                Circle()
-                    .fill(color)
-                    .opacity(isActive ? 1.0 : 0.3)
-                    .frame(width: 24, height: 24)
-                    .overlay(
-                        Circle()
-                            .fill(.white)
-                            .opacity(isActive ? 0.4 : 0.1)
-                            .frame(width: 12, height: 12)
-                            .blur(radius: 2)
-                            .offset(x: -2, y: -2)  // Highlight in top-left
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(isActive ? 0.4 : 0.1), lineWidth: 2)
-                    )
-                    .shadow(color: color.opacity(isActive ? 0.8 : 0), radius: 6)
-            }
-        }
+    
+    #Preview {
+        ContentView()
     }
-}
-
-#Preview {
-    ContentView()
 }
