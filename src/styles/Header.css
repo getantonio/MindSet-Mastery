@@ -1,0 +1,46 @@
+.app-header {
+  padding: 1rem;
+  background: #1a1a1a;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-logo {
+  height: 40px;
+  width: auto;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+h1 {
+  color: white;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 500;
+}
+
+.slogan {
+  color: white;
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+}
+
+/* For the RGB effect, add this class to elements you want to highlight */
+.rgb-effect {
+  animation: rgb 5s linear infinite;
+}
+
+@keyframes rgb {
+  0% { color: #ff0000; }
+  33% { color: #00ff00; }
+  66% { color: #0000ff; }
+  100% { color: #ff0000; }
+} 

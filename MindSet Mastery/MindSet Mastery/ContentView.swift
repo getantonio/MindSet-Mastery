@@ -59,22 +59,8 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Title Box at the very top
-            VStack(spacing: 8) {
-                Text("Transform Your Mindset")
-                    .font(.title.bold())
-                    .foregroundColor(themeManager.textColor)
-                    .shadow(color: themeManager.glowColor, radius: 8)
-                Text("Record and loop affirmations to rewire your thoughts")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-            }
-            .padding(.vertical, 8)
-            .frame(maxWidth: 500)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(Color(white: 0.15))
-            )
+            // New Header
+            Header()
             
             // Rest of the content in a ScrollView
             ScrollView {
