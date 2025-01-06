@@ -32,6 +32,7 @@ struct ContentView: View {
     @State private var previousTitle = ""
     @State private var backgroundPulse = false
     @StateObject private var themeManager = ThemeManager.shared
+    @State private var isAutoCycling = false
     
     var currentTitle: String {
         guard let category = selectedCategory else {
@@ -153,12 +154,12 @@ struct ContentView: View {
                                         }) {
                                             Text("REC")
                                                 .font(.system(.headline, design: .monospaced))
-                                                .foregroundColor(.white)
+                                                .foregroundColor(themeManager.activeColor)
                                                 .padding(.horizontal, 20)
                                                 .padding(.vertical, 12)
-                                                .background(isRecording ? Color.red : Color.gray.opacity(0.3))
+                                                .background(isRecording ? Color.red : Color(white: 0.15))
                                                 .cornerRadius(8)
-                                                .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
+                                                .shadow(color: isRecording ? .red.opacity(0.5) : themeManager.shadowColor, radius: 4)
                                         }
                                         .disabled(selectedCategory == nil)
                                     }
@@ -267,16 +268,25 @@ struct ContentView: View {
                 Button(action: {
                     showPlaylist.toggle()
                 }) {
-                    HStack {
-                        Image(systemName: "list.bullet")
-                        Text("Playlist")
+                    HStack(spacing: 8) {
+                        Image(systemName: "headphones.circle.fill")  // More elegant icon
+                            .font(.title2)
+                        Text("My Recordings")  // More descriptive text
+                            .fontWeight(.medium)
                     }
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(themeManager.activeColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color(white: 0.2))
-                    .cornerRadius(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(white: 0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(themeManager.activeColor.opacity(0.3), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal)
                 }
                 .padding(.bottom, 8)
             }
@@ -394,29 +404,48 @@ struct ContentView: View {
     
     private var colorThemeSelector: some View {
         HStack(spacing: 12) {
-            // Green theme
+            // Auto-cycle button
+            Button(action: {
+                withAnimation {
+                    themeManager.isAutoCycling.toggle()
+                }
+            }) {
+                Image(systemName: themeManager.isAutoCycling ? "repeat.circle.fill" : "repeat.circle")
+                    .font(.title2)
+                    .foregroundColor(Color(white: 0.15))  // Match category button background
+            }
+            
+            // Color buttons
+            ColorThemeButton(color: .gray, action: {  // Changed from .white to .gray
+                withAnimation {
+                    themeManager.isAutoCycling = false
+                    themeManager.activeColor = .gray  // Changed from .white to .gray
+                }
+            }, isActive: themeManager.activeColor == .gray)  // Changed from .white to .gray
+            
             ColorThemeButton(color: .green, action: {
                 withAnimation {
+                    themeManager.isAutoCycling = false
                     themeManager.activeColor = .green
                 }
             }, isActive: themeManager.activeColor == .green)
             
-            // Red theme
             ColorThemeButton(color: .red, action: {
                 withAnimation {
-                    themeManager.activeColor = .red
+                    themeManager.isAutoCycling = false
+                    themeManager.activeColor = Color(red: 1, green: 0, blue: 0)  // Use pure RGB red instead of .red
                 }
-            }, isActive: themeManager.activeColor == .red)
+            }, isActive: themeManager.activeColor == Color(red: 1, green: 0, blue: 0))  // Compare with pure RGB red
             
-            // Blue theme
             ColorThemeButton(color: .blue, action: {
                 withAnimation {
+                    themeManager.isAutoCycling = false
                     themeManager.activeColor = .blue
                 }
             }, isActive: themeManager.activeColor == .blue)
         }
         .padding(.horizontal)
-        .padding(.bottom, 4)  // Reduced bottom padding
+        .padding(.bottom, 4)
     }
     
     private func saveRecording(url: URL, category: BehaviorCategory) {

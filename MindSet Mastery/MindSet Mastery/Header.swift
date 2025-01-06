@@ -17,7 +17,6 @@ struct Header: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .top)
-        .padding(.top, 8)
         .padding(.horizontal)
     }
 }
