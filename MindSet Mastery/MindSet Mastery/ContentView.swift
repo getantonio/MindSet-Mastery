@@ -38,15 +38,20 @@ struct ContentView: View {
             return "SELECT CATEGORY"
         }
         
+        // Safety check for affirmations
+        guard !affirmationsVM.currentAffirmations.isEmpty else {
+            return category.name
+        }
+        
         switch titleIndex {
         case 0:
             return category.name
         case 1:
-            return category.defaultAffirmations[0]
+            return affirmationsVM.currentAffirmations[0]
         case 2:
-            return category.defaultAffirmations[1]
+            return affirmationsVM.currentAffirmations[1]
         case 3:
-            return category.defaultAffirmations[2]
+            return affirmationsVM.currentAffirmations[2]
         default:
             return category.name
         }
@@ -192,10 +197,18 @@ struct ContentView: View {
                     Menu {
                         ForEach(BehaviorCategory.categories) { category in
                             Button(category.name) {
+                                print("Selected category: \(category.name)")
+                                print("Affirmation count: \(category.defaultAffirmations.count)")
+                                
+                                // Update category first
                                 selectedCategory = category
                                 titleIndex = 0
+                                
+                                // Then initialize affirmations if not custom
                                 if !category.isCustom {
-                                    affirmationsVM.refreshAffirmations(for: category)
+                                    DispatchQueue.main.async {
+                                        self.affirmationsVM.initializeAffirmations(for: category)
+                                    }
                                 }
                             }
                         }
@@ -224,20 +237,33 @@ struct ContentView: View {
                             .padding(.horizontal)
                         } else {
                             // Regular Affirmations List
-                            ScrollView {
-                                VStack(spacing: 10) {
-                                    ForEach(category.defaultAffirmations, id: \.self) { affirmation in
-                                        Text(affirmation)
-                                            .foregroundColor(.white)
-                                            .padding()
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .background(Color(white: 0.15))
-                                            .cornerRadius(8)
+                            VStack(spacing: 4) {  // Reduced from 10 to 4
+                                ScrollView {
+                                    VStack(spacing: 4) {  // Reduced from 10 to 4
+                                        if affirmationsVM.currentAffirmations.isEmpty {
+                                            Text("Loading affirmations...")
+                                                .foregroundColor(.gray)
+                                                .padding(.vertical, 8)  // Reduced padding
+                                        } else {
+                                            ForEach(Array(affirmationsVM.currentAffirmations.enumerated()), id: \.1) { index, affirmation in
+                                                Text(affirmation)
+                                                    .foregroundColor(.white)
+                                                    .padding(.vertical, 8)  // Reduced vertical padding
+                                                    .padding(.horizontal, 12)  // Reduced horizontal padding
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                    .background(Color(white: 0.15))
+                                                    .cornerRadius(6)  // Slightly reduced corner radius
+                                            }
+                                        }
                                     }
+                                    .padding(.horizontal, 8)  // Reduced outer horizontal padding
                                 }
-                                .padding(.horizontal)
+                                .frame(maxHeight: 200)
+                                
+                                regenerateButton
+                                    .padding(.top, 4)  // Reduced padding above button
                             }
-                            .frame(maxHeight: 200)
+                            .padding(.horizontal, 8)  // Reduced outer padding
                         }
                     }
                 }
@@ -348,6 +374,28 @@ struct ContentView: View {
                 .frame(width: 40, height: 40)  // Make it square
                 .background(Color(.darkGray))
                 .clipShape(Circle())           // Make it circular
+        }
+        .buttonStyle(.plain)
+        .disabled(affirmationsVM.isLoading)
+        .overlay {
+            if affirmationsVM.isLoading {
+                ProgressView()
+            }
+        }
+    }
+    
+    private var regenerateButton: some View {
+        Button(action: {
+            if let category = selectedCategory {
+                affirmationsVM.refreshAffirmations(for: category)
+            }
+        }) {
+            Image(systemName: "arrow.triangle.2.circlepath")
+                .font(.title2)
+                .foregroundColor(.white)
+                .frame(width: 120, height: 32)  // Wider and shorter
+                .background(Color(white: 0.15))  // Match affirmations background
+                .cornerRadius(8)
         }
         .buttonStyle(.plain)
         .disabled(affirmationsVM.isLoading)

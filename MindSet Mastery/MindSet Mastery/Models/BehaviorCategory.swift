@@ -1,178 +1,398 @@
 import Foundation
 
 struct BehaviorCategory: Identifiable {
-    let id = UUID()
+    let id: String
     let name: String
-    let icon: String
-    let description: String
-    let defaultAffirmations: [String]
     let isCustom: Bool
-    
-    init(name: String, icon: String = "", description: String = "", defaultAffirmations: [String], isCustom: Bool = false) {
-        self.name = name
-        self.icon = icon
-        self.description = description
-        self.defaultAffirmations = defaultAffirmations
-        self.isCustom = isCustom
-    }
-    
-    static let custom = BehaviorCategory(
-        name: "Custom",
-        defaultAffirmations: CustomAffirmation.defaultAffirmations,
-        isCustom: true
-    )
+    let defaultAffirmations: [String]
     
     static let categories: [BehaviorCategory] = [
+        // Custom category first
         BehaviorCategory(
-            name: "Anxiety",
-            icon: "heart.circle",
-            description: "Transform anxiety into calm and confidence",
+            id: "custom",
+            name: "Custom Affirmations",
+            isCustom: true,
+            defaultAffirmations: []
+        ),
+        // Standard categories from affirmations.ts
+        BehaviorCategory(
+            id: "quit-smoking",
+            name: "Quit Smoking or Addictions",
+            isCustom: false,
             defaultAffirmations: [
-                "I am safe and in control of my thoughts",
-                "With each breath, I release anxiety and welcome peace",
-                "I choose to respond to life with calmness and clarity"
+                "I release the urge to rely on unhealthy habits.",
+                "My determination to heal grows stronger each day.",
+                "I fill my life with activities that support my well-being.",
+                "I choose freedom over addiction with every decision I make.",
+                "My mind and body are aligned in the pursuit of health.",
+                "I trust the process of change and embrace it fully.",
+                "My inner strength is greater than any external temptation.",
+                "I am proud of the person I am becoming.",
+                "I am surrounded by support and love on my journey to recovery.",
+                "I replace old habits with positive, uplifting ones.",
+                "I am stronger than my cravings and choose a healthier path.",
+                "I release the hold addiction has over me.",
+                "Every step I take brings me closer to freedom and wellness.",
+                "I trust my inner strength to guide me toward recovery.",
+                "I deserve a life of clarity, joy, and health.",
+                "I forgive myself for past mistakes and focus on my growth.",
+                "I choose progress over perfection every day.",
+                "I am worthy of a life free from addiction.",
+                "I take pride in every small victory on my journey.",
+                "My commitment to healing inspires me daily."
             ]
         ),
         BehaviorCategory(
-            name: "Self-Doubt",
-            icon: "person.fill.checkmark",
-            description: "Build unwavering self-confidence",
+            id: "sleep",
+            name: "Better Sleep",
+            isCustom: false,
             defaultAffirmations: [
-                "I trust in my abilities and inner wisdom",
-                "I am worthy of success and happiness",
-                "My potential is limitless"
+                "I release the stress of the day and welcome restful sleep.",
+                "My mind and body relax completely as I prepare for sleep.",
+                "I deserve deep, restorative sleep every night.",
+                "I let go of all worries and surrender to peaceful dreams.",
+                "Each night, my sleep renews and energizes me.",
+                "I create a calm, comfortable space for sleep.",
+                "I fall asleep easily and wake up refreshed.",
+                "My body knows how to rest and heal as I sleep.",
+                "I trust the process of relaxation to bring me peace.",
+                "Sleep is my sanctuary, and I honor it fully.",
+                "I create a peaceful environment that promotes deep rest.",
+                "My body and mind work in harmony to prepare for sleep.",
+                "I welcome calmness and serenity as I wind down for the night.",
+                "My thoughts slow, and I feel safe as I drift into sleep.",
+                "I let go of all tension and allow myself to relax completely.",
+                "My sleep is deep, healing, and restorative.",
+                "I honor my need for rest and prioritize it daily.",
+                "Each morning, I wake up refreshed and revitalized.",
+                "I trust my body's natural ability to fall asleep with ease.",
+                "Sleep is my time to heal and recharge for the day ahead."
+            ]
+        ),
+        // Continue with all other categories...
+        BehaviorCategory(
+            id: "emotional-mastery",
+            name: "Emotional Mastery",
+            isCustom: false,
+            defaultAffirmations: [
+                "I am the master of my emotions and respond with calmness.",
+                "I allow myself to feel without being overwhelmed.",
+                "Every emotion I experience teaches me something valuable.",
+                "I release what no longer serves me emotionally.",
+                "I choose peace over chaos in all situations.",
+                "My emotional resilience grows stronger every day.",
+                "I am in charge of how I react to life's challenges.",
+                "I honor my emotions but do not let them define me.",
+                "I attract peace and positivity into my life.",
+                "I forgive myself and others, creating emotional freedom.",
+                "I embrace my emotions and use them as tools for growth.",
+                "I remain calm and centered in the face of challenges.",
+                "I am in control of how I respond to life's ups and downs.",
+                "I release negativity and welcome positive emotions into my life.",
+                "My emotions are valid, and I handle them with grace.",
+                "I practice mindfulness to better understand my feelings.",
+                "My emotional intelligence grows stronger each day.",
+                "I navigate my emotions with wisdom and self-awareness.",
+                "I am free from emotional turmoil and grounded in peace.",
+                "I honor my emotions without letting them control me."
             ]
         ),
         BehaviorCategory(
-            name: "Procrastination",
-            icon: "clock.fill",
-            description: "Overcome delay and take action",
-            defaultAffirmations: [
-                "I take immediate action towards my goals",
-                "I choose productivity over procrastination",
-                "I am focused and efficient in all I do"
-            ]
-        ),
-        BehaviorCategory(
-            name: "Anger",
-            icon: "flame.fill",
-            description: "Transform anger into inner peace",
-            defaultAffirmations: [
-                "I choose peace over anger",
-                "I respond to challenges with calmness",
-                "I am in control of my emotions"
-            ]
-        ),
-        BehaviorCategory(
-            name: "Fear",
-            icon: "shield.fill",
-            description: "Face fears with courage",
-            defaultAffirmations: [
-                "I am stronger than my fears",
-                "I face challenges with courage",
-                "Every obstacle is an opportunity for growth"
-            ]
-        ),
-        BehaviorCategory(
-            name: "Stress",
-            icon: "leaf.fill",
-            description: "Find calm in chaos",
-            defaultAffirmations: [
-                "I choose to remain calm under pressure",
-                "Stress flows through me and dissolves",
-                "I am centered and peaceful"
-            ]
-        ),
-        BehaviorCategory(
-            name: "Depression",
-            icon: "sun.max.fill",
-            description: "Cultivate inner light and joy",
-            defaultAffirmations: [
-                "I deserve happiness and joy",
-                "Each day brings new hope and possibilities",
-                "I am worthy of love and happiness"
-            ]
-        ),
-        BehaviorCategory(
-            name: "Addiction",
-            icon: "arrow.up.forward.circle.fill",
-            description: "Break free and reclaim control",
-            defaultAffirmations: [
-                "I am stronger than my impulses",
-                "I choose healthy alternatives",
-                "Each day I grow stronger in my recovery"
-            ]
-        ),
-        BehaviorCategory(
-            name: "Relationships",
-            icon: "heart.fill",
-            description: "Nurture meaningful connections",
-            defaultAffirmations: [
-                "I attract healthy and positive relationships",
-                "I am worthy of love and respect",
-                "I communicate with openness and honesty"
-            ]
-        ),
-        BehaviorCategory(
+            id: "confidence",
             name: "Confidence",
-            icon: "star.fill",
-            description: "Embrace your inner strength",
+            isCustom: false,
             defaultAffirmations: [
-                "I am confident in my abilities",
-                "I radiate confidence and self-assurance",
-                "I trust my inner wisdom"
+                "I believe in myself and my abilities.",
+                "I deserve success and happiness.",
+                "I radiate confidence in all that I do.",
+                "I trust myself to handle any situation with grace.",
+                "I am proud of who I am becoming.",
+                "My self-confidence grows with every small success.",
+                "I embrace my uniqueness and celebrate my strengths.",
+                "I am worthy of respect and admiration.",
+                "Challenges are opportunities for me to shine.",
+                "I walk through life with courage and self-assurance.",
+                "I walk into every room with poise and assurance.",
+                "My confidence inspires and uplifts those around me.",
+                "I celebrate my achievements and embrace my potential.",
+                "I am capable of achieving greatness in all areas of my life.",
+                "I trust my abilities and approach challenges with courage.",
+                "I attract success by believing in myself completely.",
+                "I am unapologetically confident in who I am.",
+                "My self-belief is unshakable, and I radiate positivity.",
+                "I am deserving of all the success that comes my way.",
+                "Confidence is my natural state, and I carry it effortlessly."
             ]
         ),
         BehaviorCategory(
-            name: "Motivation",
-            icon: "bolt.fill",
-            description: "Ignite your inner drive",
+            id: "happiness",
+            name: "Happiness",
+            isCustom: false,
             defaultAffirmations: [
-                "I am driven and motivated to achieve my goals",
-                "My potential is limitless",
-                "I take consistent action towards my dreams"
+                "I choose happiness in every moment.",
+                "Joy flows freely through my life.",
+                "I create my own happiness and share it with others.",
+                "I am grateful for the small and big joys in my life.",
+                "My happiness is a reflection of my inner peace.",
+                "I attract positivity and joy wherever I go.",
+                "I focus on what brings me happiness and let go of negativity.",
+                "I deserve to be happy and fulfilled.",
+                "My heart is full of love, gratitude, and joy.",
+                "Happiness is my natural state of being.",
+                "I find joy in the simple pleasures of life.",
+                "My heart is filled with gratitude and contentment.",
+                "I spread happiness wherever I go.",
+                "I allow myself to experience happiness fully and freely.",
+                "My happiness shines through and brightens my world.",
+                "I focus on the positive and let go of negativity.",
+                "I choose to see the good in every situation.",
+                "My inner happiness is not dependent on external circumstances.",
+                "I am grateful for the gift of happiness in my life.",
+                "I nurture my happiness by living authentically and joyfully."
             ]
         ),
         BehaviorCategory(
+            id: "focus",
             name: "Focus",
-            icon: "target",
-            description: "Sharpen your concentration",
+            isCustom: false,
             defaultAffirmations: [
-                "I maintain laser-like focus on my goals",
-                "I am present and focused in all I do",
-                "My mind is clear and concentrated"
+                "I concentrate easily and stay present in the moment.",
+                "I focus on my priorities with clarity and purpose.",
+                "Distractions fade away as I work toward my goals.",
+                "My mind is clear, calm, and productive.",
+                "I commit to the task at hand with full attention.",
+                "I honor my time by staying focused and disciplined.",
+                "I find joy in deep focus and purposeful work.",
+                "I let go of multitasking and embrace single-minded focus.",
+                "Each focused effort brings me closer to success.",
+                "I trust my ability to stay on track and achieve.",
+                "I direct my energy toward what truly matters.",
+                "My concentration improves with every focused effort I make.",
+                "I create mental clarity by eliminating distractions.",
+                "My focus is sharp, and I achieve my goals with ease.",
+                "I stay present and engaged in each moment.",
+                "I complete my tasks with precision and efficiency.",
+                "I maintain focus even when challenges arise.",
+                "My disciplined mind allows me to accomplish anything.",
+                "I am fully immersed in my work and achieve great results.",
+                "I am proud of the progress I make through focused action."
             ]
         ),
         BehaviorCategory(
-            name: "Sleep",
-            icon: "moon.fill",
-            description: "Achieve restful sleep",
+            id: "habits",
+            name: "Habits & Discipline",
+            isCustom: false,
             defaultAffirmations: [
-                "I easily fall into deep, restful sleep",
-                "My mind and body are ready for peaceful rest",
-                "I wake up refreshed and energized"
+                "I create habits that align with my goals and values.",
+                "Discipline is my superpower, and I use it wisely.",
+                "I honor my commitments to myself and others.",
+                "Small, consistent actions lead to big results.",
+                "I stay focused and disciplined on my journey.",
+                "I celebrate the progress I make every day.",
+                "My habits reflect the person I want to become.",
+                "I am patient with myself as I build new routines.",
+                "I trust the process of growth through discipline.",
+                "I am committed to my personal growth and development.",
+                "I follow through on my plans with determination.",
+                "Each day, I strengthen my self-discipline.",
+                "My habits create the foundation for my success.",
+                "I am in control of my actions and choices.",
+                "I embrace structure and routine in my life.",
+                "My discipline grows stronger each day.",
+                "I am building habits that serve my highest good.",
+                "I stay committed to my goals, no matter what.",
+                "My consistent efforts lead to lasting change.",
+                "I am proud of my dedication and discipline."
             ]
         ),
         BehaviorCategory(
-            name: "Forgiveness",
-            icon: "hand.raised.fill",
-            description: "Release and heal",
+            id: "money",
+            name: "Money & Finance",
+            isCustom: false,
             defaultAffirmations: [
-                "I choose to forgive and release the past",
-                "Forgiveness sets me free",
-                "I embrace peace and let go of resentment"
+                "I attract abundance and prosperity into my life.",
+                "I am worthy of financial success and security.",
+                "Money flows to me easily and frequently.",
+                "I make wise financial decisions.",
+                "I am a skilled manager of my money.",
+                "My income grows steadily and consistently.",
+                "I create multiple streams of income.",
+                "I invest in myself and my financial future.",
+                "I have a healthy and positive relationship with money.",
+                "Financial opportunities come to me naturally.",
+                "I am debt-free and financially independent.",
+                "I save money with joy and purpose.",
+                "My wealth grows through smart investments.",
+                "I deserve to live an abundant life.",
+                "I handle my finances with confidence and wisdom.",
+                "Money is a tool that helps me achieve my goals.",
+                "I attract wealth-building opportunities.",
+                "My financial decisions align with my values.",
+                "I am open to receiving money in expected and unexpected ways.",
+                "I build lasting wealth for myself and my family."
             ]
         ),
         BehaviorCategory(
-            name: "Gratitude",
-            icon: "gift.fill",
-            description: "Cultivate appreciation",
+            id: "healing",
+            name: "Healing and Recovery",
+            isCustom: false,
             defaultAffirmations: [
-                "I am grateful for all that I have",
-                "Each day brings new blessings",
-                "My life is filled with abundance"
+                "My body has the power to heal itself.",
+                "I give myself time and space to recover fully.",
+                "Each day I grow stronger and healthier.",
+                "I trust my body's natural healing abilities.",
+                "I am patient and gentle with myself during recovery.",
+                "My healing journey unfolds perfectly.",
+                "I embrace rest as part of my healing process.",
+                "My mind and body work together for my recovery.",
+                "I deserve to heal and feel whole again.",
+                "I release what no longer serves my healing.",
+                "I am surrounded by healing energy.",
+                "My body knows exactly what it needs to heal.",
+                "I welcome healing into every cell of my body.",
+                "I am grateful for my body's ability to heal.",
+                "Each moment brings me closer to complete recovery.",
+                "I forgive myself and others as part of my healing.",
+                "I celebrate every step of progress in my recovery.",
+                "I am resilient, and my healing is a gift to myself.",
+                "I honor my body's ability to heal and recover.",
+                "I am patient with myself as I navigate my healing journey."
             ]
         ),
-        custom
+        BehaviorCategory(
+            id: "fitness",
+            name: "Fitness",
+            isCustom: false,
+            defaultAffirmations: [
+                "I enjoy moving my body and feeling strong.",
+                "Every workout brings me closer to my health goals.",
+                "I am grateful for the energy and vitality my body provides.",
+                "I honor my body by staying active and healthy.",
+                "Fitness is a celebration of what my body can do.",
+                "I grow stronger, faster, and more resilient each day.",
+                "I fuel my body with nourishing foods and movement.",
+                "My body is my temple, and I treat it with love.",
+                "I embrace challenges as opportunities to improve my fitness.",
+                "I am proud of the progress I make in my fitness journey.",
+                "I am grateful for the strength and energy my body provides.",
+                "My workouts energize and uplift me.",
+                "I enjoy challenging my body and seeing it grow stronger.",
+                "I fuel my body with movement that makes me feel alive.",
+                "Fitness is a gift I give myself every day.",
+                "I celebrate the progress I make on my fitness journey.",
+                "I am committed to living an active, healthy lifestyle.",
+                "My body is capable of amazing things, and I honor it.",
+                "I prioritize fitness as a key part of my self-care routine.",
+                "I am resilient, powerful, and capable of achieving my fitness goals."
+            ]
+        ),
+        BehaviorCategory(
+            id: "self-love",
+            name: "Self-Love",
+            isCustom: false,
+            defaultAffirmations: [
+                "I am worthy of love, respect, and kindness.",
+                "I honor and cherish myself exactly as I am.",
+                "I treat myself with compassion and understanding.",
+                "My flaws make me unique and beautiful.",
+                "I am enough just as I am.",
+                "I celebrate my achievements and forgive my mistakes.",
+                "I am my own greatest ally and supporter.",
+                "I radiate love and acceptance for myself and others.",
+                "I deserve all the good things life has to offer.",
+                "Every day, I become more confident in my own skin.",
+                "I love and accept myself unconditionally.",
+                "I am deserving of all the love and joy in the world.",
+                "I choose to see my own beauty and worth.",
+                "I am grateful for who I am becoming.",
+                "I embrace all aspects of myself with love.",
+                "I trust my inner wisdom and guidance.",
+                "I am proud of my journey and growth.",
+                "I nurture myself with loving thoughts and actions.",
+                "I choose self-love over self-judgment.",
+                "I am worthy of my own love and respect."
+            ]
+        ),
+        BehaviorCategory(
+            id: "relationships",
+            name: "Strengthening Relationships",
+            isCustom: false,
+            defaultAffirmations: [
+                "I cultivate relationships filled with love, respect, and trust.",
+                "I listen and communicate with care and understanding.",
+                "I am surrounded by people who uplift and inspire me.",
+                "I nurture my relationships with patience and kindness.",
+                "I attract healthy, meaningful connections into my life.",
+                "I create a safe space for others to express themselves.",
+                "I forgive and release grudges to strengthen my bonds.",
+                "I value and appreciate the people in my life.",
+                "I bring joy and positivity to my relationships.",
+                "Every interaction is an opportunity to deepen my connections.",
+                "I am worthy of loving and supportive relationships.",
+                "I communicate openly and honestly with others.",
+                "I attract people who respect and value me.",
+                "I build strong, lasting connections with others.",
+                "My relationships are based on mutual trust and respect.",
+                "I am a good friend and partner to others.",
+                "I choose relationships that nurture my growth.",
+                "I maintain healthy boundaries in my relationships.",
+                "I contribute positively to all my relationships.",
+                "Love and understanding flow freely in my relationships."
+            ]
+        ),
+        BehaviorCategory(
+            id: "resilience",
+            name: "Resilience",
+            isCustom: false,
+            defaultAffirmations: [
+                "I am stronger than any challenge that comes my way.",
+                "Every setback is an opportunity to grow and learn.",
+                "I bounce back with grace and determination.",
+                "I have the courage to face life's uncertainties.",
+                "My inner strength guides me through difficult times.",
+                "I adapt and thrive in every situation I encounter.",
+                "I let go of what I cannot control and focus on what I can.",
+                "Challenges are stepping stones to a brighter future.",
+                "I trust in my ability to overcome and succeed.",
+                "Resilience is my superpower, and it grows every day.",
+                "I face challenges with courage and wisdom.",
+                "I am adaptable and flexible in any situation.",
+                "My strength grows through every challenge.",
+                "I persist even when things get difficult.",
+                "I choose to rise above any obstacle.",
+                "My resilience inspires others to be strong.",
+                "I transform challenges into opportunities.",
+                "I am unshakeable in the face of adversity.",
+                "Every challenge makes me stronger and wiser.",
+                "I have the power to overcome any obstacle."
+            ]
+        ),
+        BehaviorCategory(
+            id: "quality-of-life",
+            name: "Quality of Life",
+            isCustom: false,
+            defaultAffirmations: [
+                "I choose to live a life filled with joy and purpose.",
+                "I prioritize my well-being and happiness every day.",
+                "I am grateful for the abundance in my life.",
+                "I align my actions with what brings me fulfillment.",
+                "I surround myself with positivity and inspiration.",
+                "I balance work, rest, and play to enrich my life.",
+                "I embrace each moment as a gift to be cherished.",
+                "I create a life that reflects my values and passions.",
+                "I am deserving of a life full of love, peace, and prosperity.",
+                "Every day, I strive to improve and elevate my quality of life.",
+                "I create meaningful experiences in my daily life.",
+                "My life is filled with purpose and joy.",
+                "I make choices that enhance my well-being.",
+                "I live each day with intention and gratitude.",
+                "My life is a beautiful journey of growth and discovery.",
+                "I create a life that brings me joy and satisfaction.",
+                "I appreciate the simple pleasures in my daily life.",
+                "My life is rich with meaningful relationships and experiences.",
+                "I choose activities that add value to my life.",
+                "Every day is an opportunity to enhance my quality of life."
+            ]
+        )
     ]
 } 
