@@ -31,6 +31,7 @@ struct ContentView: View {
     @State private var titleOpacity = 1.0
     @State private var previousTitle = ""
     @State private var backgroundPulse = false
+    @StateObject private var themeManager = ThemeManager.shared
     
     var currentTitle: String {
         guard let category = selectedCategory else {
@@ -52,213 +53,225 @@ struct ContentView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Color(white: 0.1).edgesIgnoringSafeArea(.all)
+        VStack(spacing: 0) {
+            // Title Box at the very top
+            VStack(spacing: 8) {
+                Text("Transform Your Mindset")
+                    .font(.title.bold())
+                    .foregroundColor(themeManager.textColor)
+                    .shadow(color: themeManager.glowColor, radius: 8)
+                Text("Record and loop affirmations to rewire your thoughts")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+            }
+            .padding(.vertical, 8)
+            .frame(maxWidth: 500)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color(white: 0.15))
+            )
             
-            VStack(spacing: 8) {  // Reduced from 10 to 8
-                // Title Box
+            // Rest of the content in a ScrollView
+            ScrollView {
                 VStack(spacing: 8) {
-                    Text("Transform Your Mindset")
-                        .font(.title.bold())
-                        .foregroundColor(.green)
-                    Text("Record and loop affirmations to rewire your thoughts")
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
-                }
-                .padding(.vertical, 8)  // Reduced padding
-                .frame(maxWidth: 500)
-                .background(
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color(white: 0.15))
-                )
-                .padding(.top, 4)  // Reduced from 8
-                .padding(.bottom, 8)  // Reduced from 10
-                
-                // Recording Window with pulsing background
-                ZStack {
-                    // Pure black background
-                    Color.black
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.green.opacity(0.2))
-                        )
-                    
-                    GeometryReader { geometry in
-                        VStack(spacing: 0) {
-                            // Title section (top 30% of space)
-                            ZStack {
-                                // Previous Title
-                                Text(previousTitle)
-                                    .font(.headline)
-                                    .foregroundColor(.green)
-                                    .opacity(1 - titleOpacity)
-                                    .frame(maxWidth: .infinity)
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.5)
-                                
-                                // Current Title
-                                Text(currentTitle)
-                                    .font(.headline)
-                                    .foregroundColor(.green)
-                                    .opacity(titleOpacity)
-                                    .frame(maxWidth: .infinity)
-                                    .multilineTextAlignment(.center)
-                                    .lineLimit(2)
-                                    .minimumScaleFactor(0.5)
-                            }
-                            .padding(.horizontal)
-                            .scaleEffect(titleScale)
-                            .animation(
-                                Animation.easeInOut(duration: 2.5)
-                                    .repeatForever(autoreverses: true),
-                                value: isRecording
+                    // Recording Window with pulsing background
+                    ZStack {
+                        // Pure black background
+                        Color.black
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(themeManager.accentColor.opacity(0.2))
                             )
-                            .frame(height: geometry.size.height * 0.3)
-                            
-                            Spacer()
-                            
-                            // Bottom section with wheels and controls
-                            VStack(spacing: 0) {  // Changed from 5 to 0
-                                // Spinning wheels
-                                HStack(spacing: 40) {
-                                    HypnoticWheelView(
-                                        isActive: selectedCategory != nil,
-                                        isRecording: isRecording,
-                                        audioLevel: audioManager.audioLevel,
-                                        rotateClockwise: false
-                                    )
-                                    .frame(width: 100, height: 100)
+                        
+                        GeometryReader { geometry in
+                            VStack(spacing: 0) {
+                                // Title section (top 30% of space)
+                                ZStack {
+                                    // Previous Title
+                                    Text(previousTitle)
+                                        .font(.headline)
+                                        .foregroundColor(themeManager.textColor)
+                                        .opacity(1 - titleOpacity)
+                                        .frame(maxWidth: .infinity)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.5)
                                     
-                                    HypnoticWheelView(
-                                        isActive: selectedCategory != nil,
-                                        isRecording: isRecording,
-                                        audioLevel: audioManager.audioLevel,
-                                        rotateClockwise: true
-                                    )
-                                    .frame(width: 100, height: 100)
+                                    // Current Title
+                                    Text(currentTitle)
+                                        .font(.headline)
+                                        .foregroundColor(themeManager.textColor)
+                                        .opacity(titleOpacity)
+                                        .frame(maxWidth: .infinity)
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(2)
+                                        .minimumScaleFactor(0.5)
                                 }
-                                .padding(.bottom, 5)
-                                .padding(.leading, 33)
+                                .padding(.horizontal)
+                                .scaleEffect(titleScale)
+                                .animation(
+                                    Animation.easeInOut(duration: 2.5)
+                                        .repeatForever(autoreverses: true),
+                                    value: isRecording
+                                )
+                                .frame(height: geometry.size.height * 0.3)
                                 
-                                // Record controls
-                                VStack(spacing: 5) {
-                                    // Discard Button
-                                    Button(action: {
-                                        isRecording = false
-                                        audioManager.discardRecording()
-                                    }) {
-                                        Image(systemName: "xmark.circle.fill")
-                                            .font(.system(.title2))
-                                            .foregroundColor(.red.opacity(0.8))
+                                Spacer()
+                                
+                                // Bottom section with wheels and controls
+                                VStack(spacing: 0) {  // Changed from 5 to 0
+                                    // Spinning wheels
+                                    HStack(spacing: 40) {
+                                        HypnoticWheelView(
+                                            isActive: selectedCategory != nil,
+                                            isRecording: isRecording,
+                                            audioLevel: audioManager.audioLevel,
+                                            rotateClockwise: false
+                                        )
+                                        .frame(width: 100, height: 100)
+                                        
+                                        HypnoticWheelView(
+                                            isActive: selectedCategory != nil,
+                                            isRecording: isRecording,
+                                            audioLevel: audioManager.audioLevel,
+                                            rotateClockwise: true
+                                        )
+                                        .frame(width: 100, height: 100)
                                     }
-                                    .opacity(isRecording ? 1 : 0)
-                                    .animation(.easeInOut, value: isRecording)
+                                    .padding(.bottom, 5)
+                                    .padding(.leading, 33)
                                     
-                                    // Record Button
-                                    Button(action: {
-                                        isRecording.toggle()
-                                        handleRecordingStateChanged(isRecording)
-                                    }) {
-                                        Text("REC")
-                                            .font(.system(.headline, design: .monospaced))
-                                            .foregroundColor(.white)
-                                            .padding(.horizontal, 20)
-                                            .padding(.vertical, 12)
-                                            .background(isRecording ? Color.red : Color.gray.opacity(0.3))
-                                            .cornerRadius(8)
-                                            .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
+                                    // Record controls
+                                    VStack(spacing: 5) {
+                                        // Discard Button
+                                        Button(action: {
+                                            isRecording = false
+                                            audioManager.discardRecording()
+                                        }) {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.system(.title2))
+                                                .foregroundColor(.red.opacity(0.8))
+                                        }
+                                        .opacity(isRecording ? 1 : 0)
+                                        .animation(.easeInOut, value: isRecording)
+                                        
+                                        // Record Button
+                                        Button(action: {
+                                            isRecording.toggle()
+                                            handleRecordingStateChanged(isRecording)
+                                        }) {
+                                            Text("REC")
+                                                .font(.system(.headline, design: .monospaced))
+                                                .foregroundColor(.white)
+                                                .padding(.horizontal, 20)
+                                                .padding(.vertical, 12)
+                                                .background(isRecording ? Color.red : Color.gray.opacity(0.3))
+                                                .cornerRadius(8)
+                                                .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
+                                        }
+                                        .disabled(selectedCategory == nil)
                                     }
-                                    .disabled(selectedCategory == nil)
+                                    .frame(height: geometry.size.height * 0.25)
+                                    .padding(.bottom, 15)  // Added fixed padding from bottom
                                 }
-                                .frame(height: geometry.size.height * 0.25)
-                                .padding(.bottom, 15)  // Added fixed padding from bottom
+                            }
+                            .padding()
+                        }
+                    }
+                    .frame(height: 300)
+                    .cornerRadius(12)
+                    .shadow(color: themeManager.shadowColor, radius: 10)
+                    .padding(.horizontal)
+                    .padding(.vertical, 10)
+                    .onAppear {
+                        backgroundPulse = true
+                        startTitleRotation()
+                    }
+                    
+                    // Category Selection Menu
+                    Menu {
+                        ForEach(BehaviorCategory.categories) { category in
+                            Button(category.name) {
+                                selectedCategory = category
+                                titleIndex = 0
+                                if !category.isCustom {
+                                    affirmationsVM.refreshAffirmations(for: category)
+                                }
                             }
                         }
-                        .padding()
-                    }
-                }
-                .frame(height: 300)
-                .cornerRadius(12)
-                .shadow(color: .green.opacity(0.2), radius: 10)
-                .padding(.horizontal)
-                .padding(.vertical, 10)
-                .onAppear {
-                    backgroundPulse = true
-                    startTitleRotation()
-                }
-                
-                // Category Selection Menu
-                Menu {
-                    ForEach(BehaviorCategory.categories) { category in
-                        Button(category.name) {
-                            selectedCategory = category
-                            titleIndex = 0
-                            if !category.isCustom {
-                                affirmationsVM.refreshAffirmations(for: category)
-                            }
+                    } label: {
+                        HStack {
+                            Image(systemName: "checkmark.circle.fill")
+                            Text(selectedCategory?.name ?? "Select")
+                            Image(systemName: "chevron.down.circle.fill")
                         }
+                        .foregroundColor(themeManager.accentColor)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .frame(width: menuWidth)
+                        .background(Color(white: 0.15))  // Slightly lighter than background
+                        .cornerRadius(8)
                     }
-                } label: {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text(selectedCategory?.name ?? "Select")
-                        Image(systemName: "chevron.down.circle.fill")
-                    }
-                    .foregroundColor(.green)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .frame(width: menuWidth)
-                    .background(Color(white: 0.15))  // Slightly lighter than background
-                    .cornerRadius(8)
-                }
-                
-                // Affirmations Section
-                if let category = selectedCategory {
-                    if category.isCustom {
-                        // Custom Affirmation Workshop
-                        VStack(spacing: 10) {
-                            AffirmationBuilderView()
-                                .frame(maxHeight: 200)
-                        }
-                        .padding(.horizontal)
-                    } else {
-                        // Regular Affirmations List
-                        ScrollView {
+                    
+                    // Affirmations Section
+                    if let category = selectedCategory {
+                        if category.isCustom {
+                            // Custom Affirmation Workshop
                             VStack(spacing: 10) {
-                                ForEach(category.defaultAffirmations, id: \.self) { affirmation in
-                                    Text(affirmation)
-                                        .foregroundColor(.white)
-                                        .padding()
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                        .background(Color(white: 0.15))
-                                        .cornerRadius(8)
-                                }
+                                AffirmationBuilderView()
+                                    .frame(maxHeight: 200)
                             }
                             .padding(.horizontal)
+                        } else {
+                            // Regular Affirmations List
+                            ScrollView {
+                                VStack(spacing: 10) {
+                                    ForEach(category.defaultAffirmations, id: \.self) { affirmation in
+                                        Text(affirmation)
+                                            .foregroundColor(.white)
+                                            .padding()
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .background(Color(white: 0.15))
+                                            .cornerRadius(8)
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                            .frame(maxHeight: 200)
                         }
-                        .frame(maxHeight: 200)
                     }
                 }
-                
-                Spacer()
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+            }
+            
+            // Bottom section with color buttons and playlist
+            VStack(spacing: 4) {
+                // Color theme selector
+                colorThemeSelector
+                    .padding(.vertical, 4)
                 
                 // Playlist Button
-                Button(action: { showPlaylist = true }) {
+                Button(action: {
+                    showPlaylist.toggle()
+                }) {
                     HStack {
-                        Image(systemName: "music.note.list")
-                        Text("Playlist")  // Changed from "My Playlists"
+                        Image(systemName: "list.bullet")
+                        Text("Playlist")
                     }
-                    .foregroundColor(.green)
-                    .padding()
-                    .background(Color(white: 0.15))
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(white: 0.2))
                     .cornerRadius(8)
                 }
                 .padding(.bottom, 8)
             }
             .padding(.horizontal)
-            .padding(.vertical, 8)
+            .background(Color(white: 0.1))
         }
+        .background(Color(white: 0.1).edgesIgnoringSafeArea(.all))
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showPlaylist) {
             PlaylistManagerView()
@@ -324,29 +337,51 @@ struct ContentView: View {
     }
     
     private var refreshButton: some View {
-        HStack {
-            Spacer()
-            Button(action: {
-                if let category = selectedCategory {
-                    affirmationsVM.refreshAffirmations(for: category)
-                }
-            }) {
-                Image(systemName: "arrow.clockwise")
-                    .font(.title2)
-                    .foregroundColor(.white)
+        Button(action: {
+            if let category = selectedCategory {
+                affirmationsVM.refreshAffirmations(for: category)
             }
-            .buttonStyle(.plain)
-            .frame(width: 66, height: 25)
-            .background(Color(.darkGray))
-            .cornerRadius(8)
-            .disabled(affirmationsVM.isLoading)
-            .overlay {
-                if affirmationsVM.isLoading {
-                    ProgressView()
-                }
-            }
-            Spacer()
+        }) {
+            Image(systemName: "arrow.clockwise")
+                .font(.title2)
+                .foregroundColor(.white)
+                .frame(width: 40, height: 40)  // Make it square
+                .background(Color(.darkGray))
+                .clipShape(Circle())           // Make it circular
         }
+        .buttonStyle(.plain)
+        .disabled(affirmationsVM.isLoading)
+        .overlay {
+            if affirmationsVM.isLoading {
+                ProgressView()
+            }
+        }
+    }
+    
+    private var colorThemeSelector: some View {
+        HStack(spacing: 12) {
+            // Green theme
+            ColorThemeButton(color: .green, action: {
+                withAnimation {
+                    themeManager.activeColor = .green
+                }
+            }, isActive: themeManager.activeColor == .green)
+            
+            // Red theme
+            ColorThemeButton(color: .red, action: {
+                withAnimation {
+                    themeManager.activeColor = .red
+                }
+            }, isActive: themeManager.activeColor == .red)
+            
+            // Blue theme
+            ColorThemeButton(color: .blue, action: {
+                withAnimation {
+                    themeManager.activeColor = .blue
+                }
+            }, isActive: themeManager.activeColor == .blue)
+        }
+        .padding(.horizontal)
     }
     
     private func saveRecording(url: URL, category: BehaviorCategory) {
@@ -462,6 +497,44 @@ struct AffirmationCard: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Color.gray.opacity(0.1))
             .cornerRadius(8)
+    }
+}
+
+struct ColorThemeButton: View {
+    let color: Color
+    let action: () -> Void
+    let isActive: Bool
+    
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                // Outer glow
+                Circle()
+                    .fill(color)
+                    .opacity(isActive ? 0.3 : 0.0)
+                    .frame(width: 32, height: 32)
+                    .blur(radius: 8)
+                
+                // LED light
+                Circle()
+                    .fill(color)
+                    .opacity(isActive ? 1.0 : 0.3)
+                    .frame(width: 24, height: 24)
+                    .overlay(
+                        Circle()
+                            .fill(.white)
+                            .opacity(isActive ? 0.4 : 0.1)
+                            .frame(width: 12, height: 12)
+                            .blur(radius: 2)
+                            .offset(x: -2, y: -2)  // Highlight in top-left
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(isActive ? 0.4 : 0.1), lineWidth: 2)
+                    )
+                    .shadow(color: color.opacity(isActive ? 0.8 : 0), radius: 6)
+            }
+        }
     }
 }
 
