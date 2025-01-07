@@ -1,17 +1,6 @@
 import SwiftUI
 import AVFoundation
 
-struct MovementLimits {
-    let horizontalRange: CGFloat
-    let verticalRange: CGFloat
-    let minDistance: CGFloat
-}
-
-enum CompanionPosition {
-    case left
-    case right
-}
-
 struct RecorderView: View {
     @ObservedObject var audioManager: AudioManager
     @Binding var isRecording: Bool
@@ -19,45 +8,39 @@ struct RecorderView: View {
     @State private var showMicrophoneAlert = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Title section - 60px
-            Text(selectedCategory?.name ?? "Select Category")
-                .font(.headline)
-                .foregroundColor(.green)
-                .frame(maxWidth: .infinity)
-                .frame(height: 60)
-            
-            // Wheels section - 190px
-            ZStack {
-                Rectangle()
-                    .fill(Color.black.opacity(0.2))
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Title
+                Text(selectedCategory?.name ?? "Select Category")
+                    .font(.headline)
+                    .foregroundColor(.green)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 4)
                 
-                // Center both wheels with 30px spacing
+                Spacer()
+                
+                // Wheels
                 HStack(spacing: 30) {
-                    // Left wheel
-                    HypnoticWheelView(
+                    RadialHypnoticView(
                         isActive: selectedCategory != nil,
                         isRecording: isRecording,
                         audioLevel: audioManager.audioLevel,
-                        rotateClockwise: false
+                        clockwise: true
                     )
-                    .frame(width: 100, height: 100)
+                    .frame(width: 96, height: 96)
                     
-                    // Right wheel
-                    HypnoticWheelView(
+                    RadialHypnoticView(
                         isActive: selectedCategory != nil,
                         isRecording: isRecording,
                         audioLevel: audioManager.audioLevel,
-                        rotateClockwise: true
+                        clockwise: false
                     )
-                    .frame(width: 100, height: 100)
+                    .frame(width: 96, height: 96)
                 }
-                .frame(maxWidth: .infinity)
-            }
-            .frame(height: 190)
-            
-            // Controls section - 50px
-            VStack(spacing: 10) {
+                
+                Spacer()
+                
+                // Record controls
                 if isRecording {
                     Button(action: {
                         isRecording = false
@@ -83,11 +66,12 @@ struct RecorderView: View {
                         .shadow(color: isRecording ? .red.opacity(0.5) : .green.opacity(0.3), radius: 4)
                 }
                 .disabled(selectedCategory == nil)
+                .padding(.bottom, 10)  // Exactly 10px from bottom
             }
-            .frame(height: 50)
-            .padding(.bottom, 10)  // 10px from bottom
+            .frame(height: geometry.size.height)
+            .background(Color.black.opacity(0.2))
         }
-        .frame(height: 300)  // Total height
+        .frame(height: 180)  // Even more compact
     }
     
     private func handleRecordingStateChanged() {

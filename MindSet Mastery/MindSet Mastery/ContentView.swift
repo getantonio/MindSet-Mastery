@@ -75,67 +75,49 @@ struct ContentView: View {
                                     .stroke(themeManager.accentColor.opacity(0.2))
                             )
                         
-                        GeometryReader { geometry in
-                            VStack(spacing: 0) {
-                                // Title section (top 30% of space)
-                                ZStack {
-                                    // Previous Title
-                                    Text(previousTitle)
-                                        .font(.headline)
-                                        .foregroundColor(themeManager.textColor)
-                                        .opacity(1 - titleOpacity)
-                                        .frame(maxWidth: .infinity)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                        .minimumScaleFactor(0.5)
-                                    
-                                    // Current Title
-                                    Text(currentTitle)
-                                        .font(.headline)
-                                        .foregroundColor(themeManager.textColor)
-                                        .opacity(titleOpacity)
-                                        .frame(maxWidth: .infinity)
-                                        .multilineTextAlignment(.center)
-                                        .lineLimit(2)
-                                        .minimumScaleFactor(0.5)
+                        VStack(spacing: 0) {
+                            // Title section
+                            Text(currentTitle)
+                                .font(.headline)
+                                .foregroundColor(themeManager.textColor)
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
+                                .padding(.top, 4)
+                            
+                            Spacer()
+                            
+                            // Mandala
+                            DualPinwheelView(
+                                isActive: selectedCategory != nil,
+                                isRecording: isRecording,
+                                audioLevel: audioManager.audioLevel
+                            )
+                            .frame(width: 96, height: 96)
+                            
+                            Spacer()
+                            
+                            // Record controls
+                            ZStack {  // Use ZStack instead of HStack for true centering
+                                // Center REC button
+                                Button(action: {
+                                    isRecording.toggle()
+                                    handleRecordingStateChanged(isRecording)
+                                }) {
+                                    Text("REC")
+                                        .font(.system(.headline, design: .monospaced))
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 20)
+                                        .padding(.vertical, 12)
+                                        .background(isRecording ? Color.red : Color(white: 0.15))
+                                        .cornerRadius(8)
+                                        .shadow(color: isRecording ? .red.opacity(0.5) : themeManager.shadowColor, radius: 4)
                                 }
-                                .padding(.horizontal)
-                                .scaleEffect(titleScale)
-                                .animation(
-                                    Animation.easeInOut(duration: 2.5)
-                                        .repeatForever(autoreverses: true),
-                                    value: isRecording
-                                )
-                                .frame(height: geometry.size.height * 0.3)
+                                .disabled(selectedCategory == nil)
                                 
-                                Spacer()
-                                
-                                // Bottom section with wheels and controls
-                                VStack(spacing: 0) {  // Changed from 5 to 0
-                                    // Spinning wheels
-                                    HStack(spacing: 40) {
-                                        HypnoticWheelView(
-                                            isActive: selectedCategory != nil,
-                                            isRecording: isRecording,
-                                            audioLevel: audioManager.audioLevel,
-                                            rotateClockwise: false
-                                        )
-                                        .frame(width: 100, height: 100)
-                                        
-                                        HypnoticWheelView(
-                                            isActive: selectedCategory != nil,
-                                            isRecording: isRecording,
-                                            audioLevel: audioManager.audioLevel,
-                                            rotateClockwise: true
-                                        )
-                                        .frame(width: 100, height: 100)
-                                    }
-                                    .padding(.bottom, 5)
-                                    .padding(.leading, 33)
-                                    
-                                    // Record controls
-                                    VStack(spacing: 5) {
-                                        // Discard Button
+                                // Cancel button positioned on the right
+                                HStack {
+                                    Spacer()  // Push to right
+                                    if isRecording {
                                         Button(action: {
                                             isRecording = false
                                             audioManager.discardRecording()
@@ -144,36 +126,17 @@ struct ContentView: View {
                                                 .font(.system(.title2))
                                                 .foregroundColor(.red.opacity(0.8))
                                         }
-                                        .opacity(isRecording ? 1 : 0)
-                                        .animation(.easeInOut, value: isRecording)
-                                        
-                                        // Record Button
-                                        Button(action: {
-                                            isRecording.toggle()
-                                            handleRecordingStateChanged(isRecording)
-                                        }) {
-                                            Text("REC")
-                                                .font(.system(.headline, design: .monospaced))
-                                                .foregroundColor(themeManager.activeColor)
-                                                .padding(.horizontal, 20)
-                                                .padding(.vertical, 12)
-                                                .background(isRecording ? Color.red : Color(white: 0.15))
-                                                .cornerRadius(8)
-                                                .shadow(color: isRecording ? .red.opacity(0.5) : themeManager.shadowColor, radius: 4)
-                                        }
-                                        .disabled(selectedCategory == nil)
                                     }
-                                    .frame(height: geometry.size.height * 0.25)
-                                    .padding(.bottom, 15)  // Added fixed padding from bottom
                                 }
                             }
-                            .padding()
+                            .padding(.horizontal, 20)
+                            .padding(.bottom, 10)
                         }
                     }
-                    .frame(height: 300)
+                    .frame(height: 297)  // Increased by 65% (180 * 1.65)
                     .cornerRadius(12)
                     .shadow(color: themeManager.shadowColor, radius: 10)
-                    .padding(.horizontal)
+                    .padding(.horizontal, 5)  // 5px from edges
                     .padding(.vertical, 10)
                     .onAppear {
                         backgroundPulse = true
@@ -268,25 +231,20 @@ struct ContentView: View {
                 Button(action: {
                     showPlaylist.toggle()
                 }) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "headphones.circle.fill")  // More elegant icon
-                            .font(.title2)
-                        Text("My Recordings")  // More descriptive text
-                            .fontWeight(.medium)
+                    HStack(spacing: 6) {
+                        Image(systemName: "music.note.list")
+                            .font(.system(size: 19))
+                            .foregroundColor(.gray)
+                        Text("Playlists")
+                            .font(.system(size: 17))
+                            .foregroundColor(.gray)
                     }
-                    .font(.headline)
-                    .foregroundColor(themeManager.activeColor)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color(white: 0.15))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 8)
-                                    .stroke(themeManager.activeColor.opacity(0.3), lineWidth: 1)
-                            )
                     )
-                    .padding(.horizontal)
                 }
                 .padding(.bottom, 8)
             }
