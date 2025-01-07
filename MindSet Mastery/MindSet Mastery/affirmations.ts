@@ -2,6 +2,19 @@
 
 export const affirmationCategories = [
   {
+    id: 'super-natural-healing',
+      name: 'Super Natural Healing',
+      keywords: ['sadness', 'bad luck', 'change', 'spiritual', 'craving', 'urge', 'recovery'],
+      affirmations: [
+        { text: "I believe something wonderful is going to happen to me today.", category: 'super-natural-healing' },
+        { text: "I am blessed, I am prosperous, redeemed, forgiven, healthy, whole, talented, I am creative, confident, secure, I am disciplined", category: 'super-natural-healing' },
+        { text: "I am focused, prepared, qualified, motivated, valuable. I am Free, determined, equipped, empowered, anointed, accepted and approved.", category: 'super-natural-healing' },
+        { text: "I am NOT average, NOT mediocre, I am a perfect child of GOD", category: 'super-natural-healing' },
+             
+        
+    ],
+  },
+  {
     id: 'quit-smoking',
       name: 'Quit Smoking or Addictions',
       keywords: ['smoking', 'addiction', 'cigarette', 'drink', 'substance', 'habit', 'craving', 'urge', 'recovery', 'quit'],

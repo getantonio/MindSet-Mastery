@@ -87,12 +87,23 @@ struct ContentView: View {
                             Spacer()
                             
                             // Mandala
-                            DualPinwheelView(
-                                isActive: selectedCategory != nil,
-                                isRecording: isRecording,
-                                audioLevel: audioManager.audioLevel
-                            )
-                            .frame(width: 96, height: 96)
+                            HStack(spacing: 53) {
+                                // Left circles
+                                ExpandingCirclesView(
+                                    isActive: selectedCategory != nil,
+                                    isRecording: isRecording,
+                                    audioLevel: audioManager.audioLevel
+                                )
+                                .frame(width: 96, height: 96)
+                                
+                                // Right circles
+                                ExpandingCirclesView(
+                                    isActive: selectedCategory != nil,
+                                    isRecording: isRecording,
+                                    audioLevel: audioManager.audioLevel
+                                )
+                                .frame(width: 96, height: 96)
+                            }
                             
                             Spacer()
                             

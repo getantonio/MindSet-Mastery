@@ -20,20 +20,20 @@ struct RecorderView: View {
                 Spacer()
                 
                 // Wheels
-                HStack(spacing: 30) {
-                    RadialHypnoticView(
+                HStack(spacing: 53) {
+                    // Left tunnel
+                    HypnoticTunnelView(
                         isActive: selectedCategory != nil,
                         isRecording: isRecording,
-                        audioLevel: audioManager.audioLevel,
-                        clockwise: true
+                        audioLevel: audioManager.audioLevel
                     )
                     .frame(width: 96, height: 96)
                     
-                    RadialHypnoticView(
+                    // Right tunnel
+                    HypnoticTunnelView(
                         isActive: selectedCategory != nil,
                         isRecording: isRecording,
-                        audioLevel: audioManager.audioLevel,
-                        clockwise: false
+                        audioLevel: audioManager.audioLevel
                     )
                     .frame(width: 96, height: 96)
                 }
