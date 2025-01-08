@@ -111,14 +111,6 @@ class AudioManager: NSObject, AudioManaging {
         }
     }
     
-    private func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
-        AVAudioSession.sharedInstance().requestRecordPermission { granted in
-            DispatchQueue.main.async {
-                completion(granted)
-            }
-        }
-    }
-    
     func startRecording(for category: BehaviorCategory) {
         print("Starting new recording for category: \(category.name)")
         
@@ -132,13 +124,13 @@ class AudioManager: NSObject, AudioManaging {
         }
         
         // Check permission before recording
-        requestMicrophonePermission { [weak self] granted in
-            guard let self = self else { return }
-            
-            if granted {
-                self.beginRecording(for: category)
-            } else {
-                print("Microphone permission denied")
+        AVAudioApplication.requestRecordPermission { [weak self] granted in
+            DispatchQueue.main.async {
+                if granted {
+                    self?.beginRecording(for: category)
+                } else {
+                    print("Microphone permission denied")
+                }
             }
         }
     }

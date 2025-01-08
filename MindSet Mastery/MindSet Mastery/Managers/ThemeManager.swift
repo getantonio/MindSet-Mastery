@@ -3,29 +3,47 @@ import SwiftUI
 class ThemeManager: ObservableObject {
     static let shared = ThemeManager()
     
-    @Published var activeColor: Color = Color(red: 1, green: 0, blue: 0)
+    @Published var activeColor: Color = .green
     @Published var isAutoCycling = false
+    
+    private var timer: Timer?
+    private weak var affirmationMixer: AffirmationMixer?
     
     var textColor: Color { activeColor }
     var accentColor: Color { activeColor }
     var glowColor: Color { activeColor.opacity(0.5) }
     var shadowColor: Color { activeColor.opacity(0.3) }
     
-    private var timer: Timer?
-    
-    init() {
+    init(affirmationMixer: AffirmationMixer? = nil) {
+        self.affirmationMixer = affirmationMixer
         setupTimer()
     }
     
     private func setupTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+        updateTimerInterval()
+    }
+    
+    private func updateTimerInterval() {
+        timer?.invalidate()
+        
+        // Get BPM from mixer or use default
+        let bpm = affirmationMixer?.selectedSpeed.rawValue ?? 100
+        let interval = 60.0 / bpm  // Convert BPM to seconds
+        
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             guard let self = self, self.isAutoCycling else { return }
             self.cycleToNextColor()
+            
+            // Update interval if BPM changed
+            if let currentBPM = self.affirmationMixer?.selectedSpeed.rawValue,
+               interval != 60.0 / currentBPM {
+                self.updateTimerInterval()
+            }
         }
     }
     
     private func cycleToNextColor() {
-        let pureRed = Color(red: 1, green: 0, blue: 0)  // Pure RGB Red (255,0,0)
+        let pureRed = Color(red: 1, green: 0, blue: 0)
         let colors: [Color] = [
             pureRed,
             .green,
@@ -42,7 +60,7 @@ class ThemeManager: ObservableObject {
             }
         } else {
             withAnimation {
-                self.activeColor = pureRed  // Start with pure red if no match
+                self.activeColor = pureRed
             }
         }
     }

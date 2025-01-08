@@ -31,14 +31,21 @@ struct ContentView: View {
     @State private var titleOpacity = 1.0
     @State private var previousTitle = ""
     @State private var backgroundPulse = false
-    @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var themeManager: ThemeManager
     @State private var isAutoCycling = false
     @StateObject private var affirmationMixer = AffirmationMixer()
     @StateObject private var affirmationGuide = AffirmationGuide()
-    @State private var selectedSpeed: AffirmationMixer.Speed = .medium
+    @State private var selectedSpeed: AffirmationMixer.Speed = .bpm100
     @State private var selectedBackground: BackgroundTrack = .calm
     @State private var isMetronomeActive = false
     @State private var showingVoiceCloning = false
+    @State private var showingSpeedPicker = false
+    
+    init() {
+        let mixer = AffirmationMixer()
+        _affirmationMixer = StateObject(wrappedValue: mixer)
+        _themeManager = StateObject(wrappedValue: ThemeManager(affirmationMixer: mixer))
+    }
     
     var currentTitle: String {
         guard let category = selectedCategory else {
@@ -121,8 +128,8 @@ struct ContentView: View {
                                 }) {
                                     Text("REC")
                                         .font(.system(.headline, design: .monospaced))
-                                        .foregroundColor(.white)
-                                        .frame(height: 32)  // Match other buttons
+                                        .foregroundColor(themeManager.accentColor)
+                                        .frame(height: 32)
                                         .padding(.horizontal, 20)
                                         .background(isRecording ? Color.red : Color(white: 0.15))
                                         .cornerRadius(8)
@@ -267,6 +274,7 @@ struct ContentView: View {
             .padding(.horizontal)
             .background(Color(white: 0.1))
         }
+        .environmentObject(themeManager)
         .background(Color(white: 0.1).edgesIgnoringSafeArea(.all))
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showPlaylist) {
@@ -276,6 +284,29 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingVoiceCloning) {
             VoiceCloningView(affirmationGuide: affirmationGuide)
+        }
+        .sheet(isPresented: $showingSpeedPicker) {
+            NavigationView {
+                VStack {
+                    Picker("BPM", selection: $affirmationMixer.selectedSpeed) {
+                        ForEach(AffirmationMixer.Speed.allCases, id: \.self) { speed in
+                            Text("\(Int(speed.rawValue))")
+                                .tag(speed)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                }
+                .navigationTitle("Select BPM")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            showingSpeedPicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.height(250)])
         }
     }
     
@@ -511,7 +542,7 @@ struct ContentView: View {
             }
             
             // Request microphone permission if needed
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            AVAudioApplication.requestRecordPermission { granted in
                 DispatchQueue.main.async {
                     if granted {
                         print("Starting recording for category: \(category.name)")
@@ -525,6 +556,16 @@ struct ContentView: View {
         } else if let url = audioManager.stopRecording() {
             print("Stopped recording, saving...")
             saveRecording(url: url, category: selectedCategory!)
+        }
+    }
+    
+    private func testAudioFiles() {
+        for track in BackgroundTrack.allCases {
+            if let url = track.url {
+                print("Found audio file for \(track.rawValue): \(url)")
+            } else {
+                print("⚠️ Missing audio file for \(track.rawValue)")
+            }
         }
     }
 }
@@ -552,6 +593,7 @@ struct AudioControlsView: View {
     @Binding var selectedBackground: BackgroundTrack
     @Binding var isMetronomeActive: Bool
     @Binding var showingVoiceCloning: Bool
+    @State private var showingSpeedPicker = false
     
     private let buttonHeight: CGFloat = 32
     
@@ -581,7 +623,7 @@ struct AudioControlsView: View {
                     .cornerRadius(8)
                 }
                 
-                // Sound selector
+                // Sound selector menu
                 Menu {
                     ForEach([
                         MetronomeSound.TickSound.classic,
@@ -611,15 +653,18 @@ struct AudioControlsView: View {
                     .cornerRadius(8)
                 }
                 
-                // BPM Picker in compact style
-                Picker("", selection: $affirmationMixer.selectedSpeed) {
-                    ForEach(AffirmationMixer.Speed.allCases, id: \.self) { speed in
-                        Text("\(Int(speed.rawValue))")
-                            .tag(speed)
+                // Speed selector button
+                Button(action: { showingSpeedPicker = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "speedometer")
+                        Text("\(Int(affirmationMixer.selectedSpeed.rawValue))")
+                            .font(.system(size: 14, weight: .medium))
                     }
+                    .frame(height: buttonHeight)
+                    .padding(.horizontal, 8)
+                    .background(Color(white: 0.15))
+                    .cornerRadius(8)
                 }
-                .pickerStyle(.segmented)
-                .frame(width: 160)
             }
             
             // Bottom row: Background and Voice Clone
@@ -667,11 +712,34 @@ struct AudioControlsView: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
         .background(Color(white: 0.1))
+        .sheet(isPresented: $showingSpeedPicker) {
+            NavigationView {
+                VStack {
+                    Picker("BPM", selection: $affirmationMixer.selectedSpeed) {
+                        ForEach(AffirmationMixer.Speed.allCases, id: \.self) { speed in
+                            Text("\(Int(speed.rawValue))")
+                                .tag(speed)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                }
+                .navigationTitle("Select BPM")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            showingSpeedPicker = false
+                        }
+                    }
+                }
+            }
+            .presentationDetents([.height(250)])
+        }
     }
 }
 
 struct NavigationHeader: View {
-    @StateObject private var themeManager = ThemeManager.shared
+    @EnvironmentObject private var themeManager: ThemeManager
     
     var body: some View {
         VStack {

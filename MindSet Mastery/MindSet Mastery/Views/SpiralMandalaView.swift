@@ -58,13 +58,13 @@ struct SpiralMandalaView: View {
                 .opacity(glowOpacity)
                 .blur(radius: 3)
         }
-        .onChange(of: isRecording) { newValue in
+        .onChange(of: isRecording) { oldValue, newValue in
             if newValue {
                 startAnimations()
             }
         }
-        .onAppear {
-            if isActive {
+        .onChange(of: isActive) { oldValue, newValue in
+            if newValue {
                 startAnimations()
             }
         }

@@ -4,8 +4,18 @@ import Combine
 
 class AffirmationMixer: ObservableObject {
     @Published private(set) var isPlaying = false
-    @Published var tickSoundType: MetronomeSound.TickSound = .classic
-    @Published var selectedSpeed: Speed = .medium
+    @Published var tickSoundType: MetronomeSound.TickSound = .classic {
+        didSet {
+            updateTickSound()
+        }
+    }
+    @Published var selectedSpeed: Speed = .bpm100 {
+        didSet {
+            if isPlaying {
+                updateMetronomeSpeed(to: selectedSpeed.rawValue)
+            }
+        }
+    }
     
     private let elevenlabsAPI = ElevenLabsAPI.shared
     private var metronomePlayer: AVAudioPlayer?
@@ -21,11 +31,15 @@ class AffirmationMixer: ObservableObject {
     
     // Metronome speeds (BPM)
     enum Speed: Double, CaseIterable {
-        case verySlow = 40
-        case slow = 60
-        case medium = 80
-        case fast = 100
-        case veryFast = 120
+        case bpm20 = 20
+        case bpm40 = 40
+        case bpm60 = 60
+        case bpm80 = 80
+        case bpm100 = 100
+        case bpm120 = 120
+        case bpm140 = 140
+        case bpm160 = 160
+        case bpm180 = 180
     }
     
     func generateAffirmationTrack(
@@ -54,23 +68,17 @@ class AffirmationMixer: ObservableObject {
     }
     
     func startMetronome(bpm: Double) {
-        stopMetronome()  // Stop any existing metronome
-        
-        let interval = 60.0 / bpm
-        
+        isPlaying = true
         // Create audio player
         metronomePlayer = try? AVAudioPlayer(contentsOf: tickSound)
         metronomePlayer?.prepareToPlay()
         
-        // Start timer
-        metronomeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-            self?.playTick()
-        }
-        
+        updateMetronomeSpeed(to: bpm)
         playTick()  // Play first tick immediately
     }
     
     func stopMetronome() {
+        isPlaying = false
         metronomeTimer?.invalidate()
         metronomeTimer = nil
         metronomePlayer?.stop()
@@ -82,8 +90,21 @@ class AffirmationMixer: ObservableObject {
         metronomePlayer?.play()
     }
     
+    private func updateMetronomeSpeed(to bpm: Double) {
+        let interval = 60.0 / bpm
+        metronomeTimer?.invalidate()
+        metronomeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+            self?.playTick()
+        }
+    }
+    
     private func updateTickSound() {
         tickSound = MetronomeSound.createTickSound(tickSoundType)
+        if isPlaying {
+            // Update the player with new sound without stopping
+            metronomePlayer = try? AVAudioPlayer(contentsOf: tickSound)
+            metronomePlayer?.prepareToPlay()
+        }
     }
     
     // Add method to change sound type
@@ -101,13 +122,4 @@ class AffirmationMixer: ObservableObject {
     deinit {
         stopMetronome()
     }
-}
-
-// Background track options
-enum BackgroundTrack: String, CaseIterable {
-    case calm = "ambient_calm"
-    case energetic = "upbeat_energy"
-    case spiritual = "deep_meditation"
-    case nature = "forest_sounds"
-    case cosmic = "space_harmony"
 } 

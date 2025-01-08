@@ -81,7 +81,7 @@ struct RecorderView: View {
                 return
             }
             
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            AVAudioApplication.requestRecordPermission { granted in
                 DispatchQueue.main.async {
                     if granted {
                         self.audioManager.startRecording(for: category)
