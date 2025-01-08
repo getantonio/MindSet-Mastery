@@ -33,6 +33,12 @@ struct ContentView: View {
     @State private var backgroundPulse = false
     @StateObject private var themeManager = ThemeManager.shared
     @State private var isAutoCycling = false
+    @StateObject private var affirmationMixer = AffirmationMixer()
+    @StateObject private var affirmationGuide = AffirmationGuide()
+    @State private var selectedSpeed: AffirmationMixer.Speed = .medium
+    @State private var selectedBackground: BackgroundTrack = .calm
+    @State private var isMetronomeActive = false
+    @State private var showingVoiceCloning = false
     
     var currentTitle: String {
         guard let category = selectedCategory else {
@@ -60,8 +66,7 @@ struct ContentView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // New Header
-            Header()
+            NavigationHeader()
             
             // Rest of the content in a ScrollView
             ScrollView {
@@ -117,8 +122,8 @@ struct ContentView: View {
                                     Text("REC")
                                         .font(.system(.headline, design: .monospaced))
                                         .foregroundColor(.white)
+                                        .frame(height: 32)  // Match other buttons
                                         .padding(.horizontal, 20)
-                                        .padding(.vertical, 12)
                                         .background(isRecording ? Color.red : Color(white: 0.15))
                                         .cornerRadius(8)
                                         .shadow(color: isRecording ? .red.opacity(0.5) : themeManager.shadowColor, radius: 4)
@@ -155,36 +160,48 @@ struct ContentView: View {
                     }
                     
                     // Category Selection Menu
-                    Menu {
-                        ForEach(BehaviorCategory.categories) { category in
-                            Button(category.name) {
-                                print("Selected category: \(category.name)")
-                                print("Affirmation count: \(category.defaultAffirmations.count)")
-                                
-                                // Update category first
-                                selectedCategory = category
-                                titleIndex = 0
-                                
-                                // Then initialize affirmations if not custom
-                                if !category.isCustom {
-                                    DispatchQueue.main.async {
-                                        self.affirmationsVM.initializeAffirmations(for: category)
+                    HStack(spacing: 8) {
+                        Menu {
+                            ForEach(BehaviorCategory.categories) { category in
+                                Button(category.name) {
+                                    print("Selected category: \(category.name)")
+                                    print("Affirmation count: \(category.defaultAffirmations.count)")
+                                    
+                                    // Update category first
+                                    selectedCategory = category
+                                    titleIndex = 0
+                                    
+                                    // Then initialize affirmations if not custom
+                                    if !category.isCustom {
+                                        DispatchQueue.main.async {
+                                            self.affirmationsVM.initializeAffirmations(for: category)
+                                        }
                                     }
                                 }
                             }
+                        } label: {
+                            HStack {
+                                Image(systemName: "checkmark.circle.fill")
+                                Text(selectedCategory?.name ?? "Select")
+                                Image(systemName: "chevron.down.circle.fill")
+                            }
+                            .foregroundColor(themeManager.accentColor)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .frame(width: menuWidth)
+                            .background(Color(white: 0.15))
+                            .cornerRadius(8)
                         }
-                    } label: {
-                        HStack {
-                            Image(systemName: "checkmark.circle.fill")
-                            Text(selectedCategory?.name ?? "Select")
-                            Image(systemName: "chevron.down.circle.fill")
+                        
+                        // Add playlist button here
+                        Button(action: { showPlaylist.toggle() }) {
+                            Image(systemName: "music.note.list")
+                                .font(.system(size: 14))
+                                .foregroundColor(.gray)
+                                .frame(width: 32, height: 32)
+                                .background(Color(white: 0.15))
+                                .cornerRadius(8)
                         }
-                        .foregroundColor(themeManager.accentColor)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .frame(width: menuWidth)
-                        .background(Color(white: 0.15))  // Slightly lighter than background
-                        .cornerRadius(8)
                     }
                     
                     // Affirmations Section
@@ -233,31 +250,19 @@ struct ContentView: View {
             }
             
             // Bottom section with color buttons and playlist
-            VStack(spacing: 4) {
+            VStack(spacing: 0) {
+                // Add AudioControlsView above the color theme selector
+                AudioControlsView(
+                    affirmationMixer: affirmationMixer,
+                    affirmationGuide: affirmationGuide,
+                    selectedBackground: $selectedBackground,
+                    isMetronomeActive: $isMetronomeActive,
+                    showingVoiceCloning: $showingVoiceCloning
+                )
+                
                 // Color theme selector
                 colorThemeSelector
                     .padding(.vertical, 4)
-                
-                // Playlist Button
-                Button(action: {
-                    showPlaylist.toggle()
-                }) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "music.note.list")
-                            .font(.system(size: 19))
-                            .foregroundColor(.gray)
-                        Text("Playlists")
-                            .font(.system(size: 17))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(white: 0.15))
-                    )
-                }
-                .padding(.bottom, 8)
             }
             .padding(.horizontal)
             .background(Color(white: 0.1))
@@ -268,6 +273,9 @@ struct ContentView: View {
             PlaylistManagerView()
                 .environment(\.managedObjectContext, viewContext)
                 .environmentObject(audioPlayerVM)
+        }
+        .sheet(isPresented: $showingVoiceCloning) {
+            VoiceCloningView(affirmationGuide: affirmationGuide)
         }
     }
     
@@ -535,5 +543,150 @@ struct AffirmationCard: View {
     
     #Preview {
         ContentView()
+    }
+}
+
+struct AudioControlsView: View {
+    @ObservedObject var affirmationMixer: AffirmationMixer
+    @ObservedObject var affirmationGuide: AffirmationGuide
+    @Binding var selectedBackground: BackgroundTrack
+    @Binding var isMetronomeActive: Bool
+    @Binding var showingVoiceCloning: Bool
+    
+    private let buttonHeight: CGFloat = 32
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            // Top row buttons
+            HStack(spacing: 12) {
+                // Metronome button
+                Button(action: {
+                    isMetronomeActive.toggle()
+                    if isMetronomeActive {
+                        affirmationMixer.startMetronome(bpm: affirmationMixer.selectedSpeed.rawValue)
+                    } else {
+                        affirmationMixer.stopMetronome()
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(isMetronomeActive ? Color.red : Color(white: 0.3))
+                            .frame(width: 8, height: 8)
+                        Text("Metro")
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .frame(height: buttonHeight)
+                    .padding(.horizontal, 12)
+                    .background(Color(white: 0.15))
+                    .cornerRadius(8)
+                }
+                
+                // Sound selector
+                Menu {
+                    ForEach([
+                        MetronomeSound.TickSound.classic,
+                        .digital,
+                        .soft,
+                        .wooden,
+                        .accent
+                    ], id: \.self) { sound in
+                        Button(action: { affirmationMixer.changeTickSound(to: sound) }) {
+                            HStack {
+                                Text(String(describing: sound).capitalized)
+                                if sound == affirmationMixer.tickSoundType {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "speaker.wave.2")
+                        Text(String(describing: affirmationMixer.tickSoundType).capitalized)
+                            .font(.system(size: 14, weight: .medium))
+                    }
+                    .frame(height: buttonHeight)
+                    .padding(.horizontal, 12)
+                    .background(Color(white: 0.15))
+                    .cornerRadius(8)
+                }
+                
+                // BPM Picker in compact style
+                Picker("", selection: $affirmationMixer.selectedSpeed) {
+                    ForEach(AffirmationMixer.Speed.allCases, id: \.self) { speed in
+                        Text("\(Int(speed.rawValue))")
+                            .tag(speed)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 160)
+            }
+            
+            // Bottom row: Background and Voice Clone
+            HStack(spacing: 12) {
+                // Background track menu
+                Menu {
+                    ForEach(BackgroundTrack.allCases, id: \.self) { track in
+                        Button(action: { selectedBackground = track }) {
+                            if selectedBackground == track {
+                                Label(track.rawValue.capitalized, systemImage: "checkmark")
+                            } else {
+                                Text(track.rawValue.capitalized)
+                            }
+                        }
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "music.note")
+                        Text(selectedBackground.rawValue.capitalized)
+                        Image(systemName: "chevron.down")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .frame(minWidth: 120)
+                    .background(Color(white: 0.15))
+                    .cornerRadius(8)
+                }
+                
+                // Voice Clone button
+                Button(action: { showingVoiceCloning = true }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "waveform")
+                        Text("Clone Voice")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(white: 0.15))
+                    .cornerRadius(8)
+                }
+            }
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Color(white: 0.1))
+    }
+}
+
+struct NavigationHeader: View {
+    @StateObject private var themeManager = ThemeManager.shared
+    
+    var body: some View {
+        VStack {
+            if let uiImage = UIImage(named: "brainShiftLogo") {
+                Image(uiImage: uiImage)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(height: 109)
+                    .foregroundColor(themeManager.accentColor)
+                    .shadow(color: themeManager.accentColor.opacity(0.3), radius: 5)
+                    .glow(color: themeManager.accentColor, radius: 10)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .background(Color(white: 0.1))
     }
 }

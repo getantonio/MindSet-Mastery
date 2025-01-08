@@ -2,16 +2,31 @@
 
 export const affirmationCategories = [
   {
-    id: 'super-natural-healing',
-      name: 'Super Natural Healing',
-      keywords: ['sadness', 'bad luck', 'change', 'spiritual', 'craving', 'urge', 'recovery'],
-      affirmations: [
-        { text: "I believe something wonderful is going to happen to me today.", category: 'super-natural-healing' },
-        { text: "I am blessed, I am prosperous, redeemed, forgiven, healthy, whole, talented, I am creative, confident, secure, I am disciplined", category: 'super-natural-healing' },
-        { text: "I am focused, prepared, qualified, motivated, valuable. I am Free, determined, equipped, empowered, anointed, accepted and approved.", category: 'super-natural-healing' },
-        { text: "I am NOT average, NOT mediocre, I am a perfect child of GOD", category: 'super-natural-healing' },
-             
-        
+    id: 'super-natural',
+    name: 'Super Natural',
+    keywords: ['spiritual', 'divine', 'miracle', 'blessing', 'faith', 'supernatural', 'transformation', 'enlightenment', 'awakening'],
+    affirmations: [
+      { text: "I believe something wonderful is going to happen to me today.", category: 'super-natural' },
+      { text: "I believe miracles and divine blessings are flowing into my life today.", category: 'super-natural' },
+      { text: "I am blessed, prosperous, forgiven, and whole. My spirit is creative, confident, and disciplined.", category: 'super-natural' },
+      { text: "I am focused, prepared, and divinely equipped. I am empowered, anointed, and approved.", category: 'super-natural' },
+      { text: "I transcend ordinary limitations as a divine child of the Most High.", category: 'super-natural' },
+      { text: "All spiritual bondages are broken, and I walk in complete freedom.", category: 'super-natural' },
+      { text: "My potential is limitless as I align with divine purpose.", category: 'super-natural' },
+      { text: "Divine wisdom guides my every decision and action.", category: 'super-natural' },
+      { text: "I am a channel for miraculous manifestations in this world.", category: 'super-natural' },
+      { text: "My spiritual awareness expands with each passing moment.", category: 'super-natural' },
+      { text: "I am divinely protected and guided on my spiritual journey.", category: 'super-natural' },
+      { text: "Supernatural favor surrounds me like a shield.", category: 'super-natural' },
+      { text: "I walk in divine health, prosperity, and abundance.", category: 'super-natural' },
+      { text: "My faith activates supernatural breakthroughs daily.", category: 'super-natural' },
+      { text: "I am aligned with the infinite power of the universe.", category: 'super-natural' },
+      { text: "Divine light flows through me, transforming every area of my life.", category: 'super-natural' },
+      { text: "I am a magnet for divine appointments and heavenly encounters.", category: 'super-natural' },
+      { text: "My spiritual gifts are awakening and manifesting powerfully.", category: 'super-natural' },
+      { text: "I receive divine downloads of wisdom and revelation.", category: 'super-natural' },
+      { text: "Miracles, signs, and wonders follow me wherever I go.", category: 'super-natural' },
+      { text: "I am stepping into a new realm of supernatural possibilities.", category: 'super-natural' }
     ],
   },
   {
@@ -393,5 +408,31 @@ export const affirmationCategories = [
     { text: "Every day is an opportunity to enhance my quality of life.", category: 'quality-of-life' }
     ]
 },
-
+{
+  id: 'biblical-power',
+  name: 'Biblical Power',
+  keywords: ['scripture', 'faith', 'biblical', 'verses', 'holy', 'spirit', 'prayer', 'strength', 'promise'],
+  affirmations: [
+    { text: "I can do all things through Christ who strengthens me.", category: 'biblical-power' },
+    { text: "Greater is He that is in me than he that is in the world.", category: 'biblical-power' },
+    { text: "The joy of the Lord is my strength and my shield.", category: 'biblical-power' },
+    { text: "I am more than a conqueror through Him who loved me.", category: 'biblical-power' },
+    { text: "God has not given me a spirit of fear, but of power, love, and a sound mind.", category: 'biblical-power' },
+    { text: "No weapon formed against me shall prosper.", category: 'biblical-power' },
+    { text: "The Lord is my shepherd; I shall not want.", category: 'biblical-power' },
+    { text: "I am fearfully and wonderfully made in God's image.", category: 'biblical-power' },
+    { text: "My God shall supply all my needs according to His riches in glory.", category: 'biblical-power' },
+    { text: "I walk by faith, not by sight.", category: 'biblical-power' },
+    { text: "The Lord is my light and my salvation; whom shall I fear?", category: 'biblical-power' },
+    { text: "I am the head and not the tail, above and not beneath.", category: 'biblical-power' },
+    { text: "If God is for me, who can be against me?", category: 'biblical-power' },
+    { text: "I am blessed going in and blessed going out.", category: 'biblical-power' },
+    { text: "The Lord perfects that which concerns me.", category: 'biblical-power' },
+    { text: "I am the righteousness of God in Christ Jesus.", category: 'biblical-power' },
+    { text: "The peace of God, which surpasses all understanding, guards my heart and mind.", category: 'biblical-power' },
+    { text: "I am a chosen generation, a royal priesthood, a holy nation.", category: 'biblical-power' },
+    { text: "The Lord is my rock, my fortress, and my deliverer.", category: 'biblical-power' },
+    { text: "I am blessed with every spiritual blessing in heavenly places.", category: 'biblical-power' }
+  ],
+},
   ];
